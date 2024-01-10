@@ -1,0 +1,15 @@
+/target
+docker-volumes
+
+
+.env
+*/.env
+
+.idea
+.zed
+
+.DS_Store
+
+dist
+
+*/node_modules

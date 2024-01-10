@@ -1,0 +1,27 @@
+version: "3.7"
+services:
+  pas_db:
+    container_name: pas_db
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: postgres
+    volumes:
+      - ./docker-volumes/postgres/:/var/lib/postgresql/data
+    ports:
+      - "54320:5432"
+    deploy:
+      replicas: 1
+  api:
+    container_name: pas_api
+    image: stalexsm/pas-rs
+    build:
+      context: /backend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    depends_on:
+      - pas_db
