@@ -1,0 +1,104 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - "main"
+
+env:
+  SQLX_OFFLINE: true
+  DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWD }}@${{ secrets.HOST }}:${{ secrets.DB_PORT }}/postgres
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Migrate database
+        run: |
+          cd backend
+          cargo install sqlx-cli
+          sqlx migarate run
+
+      - name: Build
+        run: |
+          cd backend
+          cargo build --release
+
+      - name: SCP to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWD }}
+          source: "target/release/backend"
+          target: "/home/pas-rs"
+          strip_components: 2
+
+      - name: SSH into Servet and Replace Source
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWD }}
+          script: |
+            cd /home/pas-rs
+            if [ -e PID.txt ]; then kill $(PID.txt); fi
+            rm PID.txt
+            ./backend & echo $! > PID.txt
+
+  deploy-frontend:
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Add WASM Target
+        run: |
+          rustup target add wasm32-unknown-unknown
+      - name: Install Trunk
+        uses: jetli/trunk-action@v0.4.0
+        with:
+          version: "latest"
+
+      - name: Build & Create Archive
+        run: |
+          cd frontend
+          trunk build --release
+          tar -zcvf deploy.tar.gz $(ls -d dist )
+      - name: SCP to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWD }}
+          source: "frontend/deploy.tar.gz"
+          target: "/home/pas-rs"
+          strip_components: 1
+
+      - name: SSH into Servet and Replace Source
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWD }}
+          script: |
+            cd /home/pas-rs
+            tar -xvf ./deploy.tar.gz -C .
+            rm ./deploy.tar.gz
