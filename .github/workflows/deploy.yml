@@ -18,14 +18,10 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: Add WASM Target
-        run: |
-          rustup target add wasm32-unknown-unknown
-
       - name: Build & Create Archive
         run: |
           cd backend
-          cargo build release
+          cargo build --release
 
       - name: SCP to Server
         uses: appleboy/scp-action@master
@@ -50,6 +46,7 @@ jobs:
             ./backend & echo $! > PID.txt
 
   deploy-frontend:
+    needs: deploy-backend
     runs-on: ubuntu-latest
 
     steps:
