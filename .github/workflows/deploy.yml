@@ -51,8 +51,7 @@ jobs:
           password: ${{ secrets.PASSWD }}
           script: |
             cd /home/pas-rs
-            if [ -e PID.txt ]; then kill $(PID.txt); fi
-            rm PID.txt
+            if [ -e PID.txt ]; then kill $(cat PID.txt); rm PID.txt; fi
             ./backend & echo $! > PID.txt
 
   deploy-frontend:
