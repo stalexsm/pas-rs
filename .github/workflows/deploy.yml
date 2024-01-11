@@ -26,7 +26,7 @@ jobs:
         run: |
           cd backend
           cargo install sqlx-cli
-          sqlx migarate run
+          sqlx migrate run
 
       - name: Build
         run: |
