@@ -4,6 +4,10 @@ on:
     branches:
       - "main"
 
+env:
+  SQLX_OFFLINE: true
+  DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWD }}@${{ secrets.HOST }}:${{ secrets.DB_PORT }}/postgres
+
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
@@ -18,9 +22,10 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: Build & Create Archive
+      - name: Build
         run: |
           cd backend
+          sqlx migarate run
           cargo build --release
 
       - name: SCP to Server
