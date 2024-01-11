@@ -38,6 +38,7 @@ where
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum Role {
+    Developer,
     Admin,
     User,
 }
@@ -46,8 +47,9 @@ impl ToString for Role {
     fn to_string(&self) -> String {
         // Преобразрвание в String
         match self {
-            Role::User => "User".to_owned(),
-            Role::Admin => "Admin".to_owned(),
+            Role::Developer => "Developer".to_string(),
+            Role::User => "User".to_string(),
+            Role::Admin => "Admin".to_string(),
         }
     }
 }

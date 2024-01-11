@@ -6,6 +6,7 @@ pub mod components;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum Role {
+    Developer,
     Admin,
     User,
 }
@@ -14,6 +15,7 @@ impl ToString for Role {
     fn to_string(&self) -> String {
         // Преобразрвание в String
         match self {
+            Role::Developer => "Developer".to_owned(),
             Role::User => "User".to_owned(),
             Role::Admin => "Admin".to_owned(),
         }

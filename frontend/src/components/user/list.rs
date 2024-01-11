@@ -65,6 +65,8 @@ pub fn user_lists(
                     <td class="px-6 py-4">{
                         if item.role == Role::Admin.to_string() {
                             {"Администратор"}
+                        } else if  item.role == Role::Developer.to_string() {
+                            {"Разработчик"}
                         } else {
                             {"Пользователь"}
                         }

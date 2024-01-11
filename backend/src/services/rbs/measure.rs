@@ -20,7 +20,7 @@ pub async fn create_measure(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания пользователя
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -47,7 +47,7 @@ pub async fn edit_measure(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -131,7 +131,7 @@ pub async fn detail_measure(
 ) -> Result<Item, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -167,7 +167,7 @@ pub async fn delete_measure(
 ) -> Result<(), AppError> {
     // Бизнес логика редактирования пользователя
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

@@ -21,7 +21,7 @@ pub async fn create_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания продукта
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -49,7 +49,7 @@ pub async fn edit_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования продукта
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -152,7 +152,7 @@ pub async fn detail_product(
 ) -> Result<Item, AppError> {
     // Бизнес логика получения продуктв
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -199,7 +199,7 @@ pub async fn delete_product(
 ) -> Result<(), AppError> {
     // Бизнес логика удаления продуктв
 
-    if current_user.role != Role::Admin.to_string() {
+    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
