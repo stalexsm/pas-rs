@@ -65,6 +65,9 @@ pub fn modal(props: &Props) -> Html {
         })
     };
 
+    debug!("{:?}", passwd1);
+    debug!("{:?}", passwd2);
+    debug!("{:?}", passwd2 == passwd1);
     debug!("{:?}", matched_passwd);
 
     html! {
@@ -96,7 +99,7 @@ pub fn modal(props: &Props) -> Html {
                                     required={true}
                                     type="password"
                                     id="passwd1"
-                                    pattern={"[0-9a-zA-Z@!&^_]{8,}"}
+                                    pattern={"[0-9a-zA-Z@!&^_.]{8,}"}
                                     class={classes!(
                                         "mb-5",
                                         "mt-2",
@@ -124,7 +127,7 @@ pub fn modal(props: &Props) -> Html {
                                     required={true}
                                     type="password"
                                     id="passwd2"
-                                    pattern={"[0-9a-zA-Z@!&^_]{8,}"}
+                                    pattern={"[0-9a-zA-Z@!&^_.]{8,}"}
                                     class={classes!(
                                         "mb-5",
                                         "mt-2",

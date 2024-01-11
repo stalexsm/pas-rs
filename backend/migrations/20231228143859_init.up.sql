@@ -81,4 +81,4 @@ create index on produced_good_adjustments (user_id);
 create index on produced_good_adjustments (produced_good_id);
 
 
-insert into users (role, email, passwd) values ('Admin', 'admin@pas.ru', '$2b$12$CMTRjNGMsdgYz3d6EUZNSOTuSYhgGZuRNYElO2TemaOc5jzuoRJHy');
+insert into users (role, email, fio, passwd) values ('Admin', 'stalex.info@yandex.ru', 'А.С (Разработчик)', '$2b$12$o1Mjf.Uhbjye1tb2gRR82.5NOA/flndnWdMfn.i5YZpGZvq4pdL4i');
