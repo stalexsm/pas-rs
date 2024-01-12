@@ -52,10 +52,10 @@ jobs:
           script: |
             cd /home/pas-rs
             if [ -e PID.txt ]; then
-              kill $(cat PID.txt)
+              kill -9 $(cat PID.txt)
               rm PID.txt
             fi
-            ./backend & echo $! > PID.txt; exit
+            ./backend & echo $! > PID.txt
 
   deploy-frontend:
     needs: deploy-backend
