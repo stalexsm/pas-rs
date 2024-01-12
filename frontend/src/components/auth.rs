@@ -26,8 +26,6 @@ pub struct ResponseData {
 
 #[function_component(AuthComponent)]
 pub fn auth() -> Html {
-    let domain_api = std::env!("DOMAIN_API");
-
     let state = use_state(State::default);
     let detail = use_state(String::new);
     let alert_visible = use_state(|| false);
@@ -71,8 +69,7 @@ pub fn auth() -> Html {
         let cloned_detail = cloned_detail.clone();
         let cloned_alert_visible = cloned_alert_visible.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            let path = format!("{}/api/auth", domain_api);
-            match http::Request::post(&path)
+            match http::Request::post("/api/auth")
                 .header("Content-Type", "application/json")
                 .json(&request_data)
                 .unwrap()
@@ -87,9 +84,7 @@ pub fn auth() -> Html {
                             .expect("Не удалось записать токен в локальное хранилище!");
 
                         let header_bearer = format!("Bearer {}", response_result.token);
-
-                        let path = format!("{}/api/current", domain_api);
-                        let response_user = http::Request::get(&path)
+                        let response_user = http::Request::get("/api/current")
                             .header("Content-Type", "application/json")
                             .header("Authorization", &header_bearer)
                             .send()

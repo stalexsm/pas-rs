@@ -29,8 +29,6 @@ pub struct RequestData {
 pub fn product() -> Html {
     // Компонент домашней страницы
 
-    let domain_api = std::env!("DOMAIN_API");
-
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
 
@@ -59,8 +57,7 @@ pub fn product() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/products", domain_api);
-                let response = http::Request::get(&path)
+                let response = http::Request::get("/api/products")
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -144,8 +141,9 @@ pub fn product() -> Html {
                     measure_unit_id,
                     name,
                 };
+                // Хак для Home
+                let path = "/api/products";
 
-                let path = format!("{}/api/products", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -159,7 +157,7 @@ pub fn product() -> Html {
                         .await
                         .unwrap();
                 } else {
-                    let _: ResponseId = http::Request::post(&path)
+                    let _: ResponseId = http::Request::post(path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .json(&req_data)
@@ -200,7 +198,8 @@ pub fn product() -> Html {
             let cloned_rendered = cloned_rendered.clone();
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let path = format!("{}/api/products", domain_api);
+                let path = "/api/products";
+
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::delete(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")

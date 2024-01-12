@@ -26,8 +26,6 @@ pub struct RequestData {
 pub fn user() -> Html {
     // Компонент домашней страницы
 
-    let domain_api = std::env!("DOMAIN_API");
-
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
 
@@ -56,8 +54,7 @@ pub fn user() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/users", domain_api);
-                let response = http::Request::get(&path)
+                let response = http::Request::get("/api/users")
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -123,8 +120,9 @@ pub fn user() -> Html {
                     role,
                     blocked,
                 };
+                // Хак для Home
+                let path = "/api/users";
 
-                let path = format!("{}/api/users", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -138,7 +136,7 @@ pub fn user() -> Html {
                         .await
                         .unwrap();
                 } else {
-                    let _: ResponseId = http::Request::post(&path)
+                    let _: ResponseId = http::Request::post(path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .json(&req_data)

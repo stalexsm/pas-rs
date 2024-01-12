@@ -22,7 +22,6 @@ pub struct Q {
 #[function_component(AnaliticComponent)]
 pub fn analitic() -> Html {
     // Компонент домашней страницы
-    let domain_api = std::env!("DOMAIN_API");
 
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
@@ -64,8 +63,7 @@ pub fn analitic() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/analitics", domain_api);
-                let response = http::Request::get(&path)
+                let response = http::Request::get("/api/analitics")
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([

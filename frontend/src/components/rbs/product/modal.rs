@@ -19,8 +19,6 @@ pub struct Props {
 pub fn modal(props: &Props) -> Html {
     // Заполнение данными
 
-    let domain_api = std::env!("DOMAIN_API");
-
     let name = use_state_eq(|| "".to_string());
     let mu_id = use_state_eq(|| 0);
 
@@ -40,9 +38,8 @@ pub fn modal(props: &Props) -> Html {
                         header_bearer.push_str(&t);
                     }
 
-                    let path = format!("{}/api/measure-units", domain_api);
                     let response =
-                        http::Request::get(&path) // todo helpers
+                        http::Request::get("/api/measure-units") // todo helpers
                             .header("Content-Type", "application/json")
                             .header("Authorization", &header_bearer)
                             .query([("page", "1"), ("per_page", "10000")])

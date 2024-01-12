@@ -21,8 +21,6 @@ pub struct Props {
 pub fn modal(props: &Props) -> Html {
     // Заполнение данными
 
-    let domain_api = std::env!("DOMAIN_API");
-
     let product_id = use_state_eq(|| 0);
     let cnt = use_state_eq(|| 0);
     let adj = use_state_eq(|| 0);
@@ -43,9 +41,8 @@ pub fn modal(props: &Props) -> Html {
                         header_bearer.push_str(&t);
                     }
 
-                    let path = format!("{}/api/products", domain_api);
                     let response =
-                        http::Request::get(&path) // todo helpers
+                        http::Request::get("/api/products") // todo helpers
                             .header("Content-Type", "application/json")
                             .header("Authorization", &header_bearer)
                             .query([("page", "1"), ("per_page", "10000")])
