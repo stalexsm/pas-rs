@@ -61,12 +61,6 @@ jobs:
             echo "Starting the Rust application..."
             ./backend > output.log 2>&1 &
             echo $! > PID.txt
-            sleep 2
-            if [ -e PID.txt ]; then
-              echo "Rust application started successfully with PID: $(cat PID.txt)"
-            else
-              echo "Failed to start the Rust application. Check logs for errors."
-            fi
 
   deploy-frontend:
     needs: deploy-backend
