@@ -50,13 +50,24 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.PASSWD }}
+          script_stop: true
           script: |
             cd /home/pas-rs
             if [ -e PID.txt ]; then
+              echo "Stopping existing process..."
               kill -9 $(cat PID.txt) || true
               rm PID.txt
             fi
+            echo "Starting the Rust application..."
             ./backend & echo $! > PID.txt
+
+            sleep 5
+
+            if [ -e PID.txt ]; then
+              echo "Rust application started successfully with PID: $(cat PID.txt)"
+            else
+              echo "Failed to start the Rust application. Check logs for errors."
+            fi
 
   deploy-frontend:
     needs: deploy-backend
@@ -103,6 +114,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.PASSWD }}
+          script_stop: true
           script: |
             cd /home/pas-rs
             tar -xvf ./deploy.tar.gz -C .
