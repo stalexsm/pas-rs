@@ -43,7 +43,7 @@ jobs:
           target: "/home/pas-rs"
           strip_components: 2
 
-      - name: SSH into Servet and Replace Source
+      - name: SSH into Servet Run Backend
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
@@ -52,7 +52,8 @@ jobs:
           script: |
             cd /home/pas-rs
             if [ -e PID.txt ]; then kill $(cat PID.txt); rm PID.txt; fi
-            ./backend & echo $! > PID.txt
+            ps aux | grep backend
+            ./backend & echo $! > PID.txt &
 
   deploy-frontend:
     needs: deploy-backend
