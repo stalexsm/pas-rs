@@ -55,7 +55,7 @@ jobs:
               kill $(cat PID.txt)
               rm PID.txt
             fi
-            ./backend & echo $! > PID.txt
+            ./backend & echo $! > PID.txt; exit
 
   deploy-frontend:
     needs: deploy-backend
