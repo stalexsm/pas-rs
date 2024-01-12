@@ -13,7 +13,7 @@ use crate::{
         home::{list::ProducedGoodList, modal::Modal, ProducedGood},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -30,6 +30,8 @@ struct RequestDataAdj {
 #[function_component(HomeComponent)]
 pub fn home() -> Html {
     // Компонент домашней страницы
+
+    let domain_api = std::env!("DOMAIN_API");
 
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
@@ -60,7 +62,7 @@ pub fn home() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/produced-goods", *DOMAIN_API);
+                let path = format!("{}/api/produced-goods", domain_api);
                 let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
@@ -137,7 +139,7 @@ pub fn home() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestDataAdj { cnt };
 
-                let path = format!("{}/api/produced-goods", *DOMAIN_API);
+                let path = format!("{}/api/produced-goods", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::post(&format!("{}/{}/adj", path, item.id))
                         .header("Content-Type", "application/json")
@@ -185,7 +187,7 @@ pub fn home() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestData { product_id, cnt };
 
-                let path = format!("{}/api/produced-goods", *DOMAIN_API);
+                let path = format!("{}/api/produced-goods", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")

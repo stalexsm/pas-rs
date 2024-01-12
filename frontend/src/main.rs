@@ -8,7 +8,7 @@ use frontend::{
         rbs::{measure::component::MeasureUnitComponent, product::component::ProductComponent},
         user::component::UserComponent,
     },
-    AppContext, AppStateContext, Route, User, DOMAIN_API,
+    AppContext, AppStateContext, Route, User,
 };
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
@@ -18,6 +18,8 @@ use yew_router::prelude::*;
 
 #[function_component(App)]
 pub fn app() -> Html {
+    let domain_api = std::env!("DOMAIN_API");
+
     // Application
     let ctx = use_reducer(|| AppStateContext(None));
     // Флаг, чтобы дождаться получения пользователя по токену
@@ -36,7 +38,9 @@ pub fn app() -> Html {
                 if let Some(t) = token.clone() {
                     header_bearer.push_str(&t);
 
-                    let path = format!("{}/api/current", *DOMAIN_API);
+                    debug!("{:?}", domain_api);
+
+                    let path = format!("{}/api/current", domain_api);
                     match http::Request::get(&path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)

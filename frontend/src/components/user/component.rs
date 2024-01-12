@@ -11,7 +11,7 @@ use crate::{
         user::{list::UserList, modal::Modal},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -25,6 +25,8 @@ pub struct RequestData {
 #[function_component(UserComponent)]
 pub fn user() -> Html {
     // Компонент домашней страницы
+
+    let domain_api = std::env!("DOMAIN_API");
 
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
@@ -54,7 +56,7 @@ pub fn user() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/users", *DOMAIN_API);
+                let path = format!("{}/api/users", domain_api);
                 let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
@@ -122,7 +124,7 @@ pub fn user() -> Html {
                     blocked,
                 };
 
-                let path = format!("{}/api/users", *DOMAIN_API);
+                let path = format!("{}/api/users", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")

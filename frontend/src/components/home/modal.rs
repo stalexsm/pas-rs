@@ -1,5 +1,5 @@
 use super::ProducedGood;
-use crate::{components::rbs::product::Product, ResponseItems, DOMAIN_API};
+use crate::{components::rbs::product::Product, ResponseItems};
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
 use wasm_bindgen::JsCast;
@@ -21,6 +21,8 @@ pub struct Props {
 pub fn modal(props: &Props) -> Html {
     // Заполнение данными
 
+    let domain_api = std::env!("DOMAIN_API");
+
     let product_id = use_state_eq(|| 0);
     let cnt = use_state_eq(|| 0);
     let adj = use_state_eq(|| 0);
@@ -41,7 +43,7 @@ pub fn modal(props: &Props) -> Html {
                         header_bearer.push_str(&t);
                     }
 
-                    let path = format!("{}/api/products", *DOMAIN_API);
+                    let path = format!("{}/api/products", domain_api);
                     let response =
                         http::Request::get(&path) // todo helpers
                             .header("Content-Type", "application/json")

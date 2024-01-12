@@ -15,7 +15,7 @@ use crate::{
         rbs::measure::{list::MeasureUnitList, modal::Modal, MeasureUnit},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -26,6 +26,8 @@ pub struct RequestData {
 #[function_component(MeasureUnitComponent)]
 pub fn measure_unit() -> Html {
     // Компонент домашней страницы
+
+    let domain_api = std::env!("DOMAIN_API");
 
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
@@ -55,7 +57,7 @@ pub fn measure_unit() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/measure-units", *DOMAIN_API);
+                let path = format!("{}/api/measure-units", domain_api);
                 let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
@@ -138,7 +140,7 @@ pub fn measure_unit() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestData { name };
 
-                let path = format!("{}/api/measure-units", *DOMAIN_API);
+                let path = format!("{}/api/measure-units", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -193,7 +195,7 @@ pub fn measure_unit() -> Html {
             let cloned_rendered = cloned_rendered.clone();
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let path = format!("{}/api/measure-units", *DOMAIN_API);
+                let path = format!("{}/api/measure-units", domain_api);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::delete(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")

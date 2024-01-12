@@ -3,7 +3,7 @@ use crate::{
         analitic::{list::AnaliticList, Analitic},
         header::component::HeaderComponent,
     },
-    AppContext, Route, User, DOMAIN_API,
+    AppContext, Route, User,
 };
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
@@ -22,6 +22,7 @@ pub struct Q {
 #[function_component(AnaliticComponent)]
 pub fn analitic() -> Html {
     // Компонент домашней страницы
+    let domain_api = std::env!("DOMAIN_API");
 
     let ctx = use_context::<AppContext>();
     let current_user: Option<User> = ctx.and_then(|ctx| ctx.0.clone());
@@ -63,7 +64,7 @@ pub fn analitic() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let path = format!("{}/api/analitics", *DOMAIN_API);
+                let path = format!("{}/api/analitics", domain_api);
                 let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)

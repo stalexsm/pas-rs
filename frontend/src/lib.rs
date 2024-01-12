@@ -1,14 +1,8 @@
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use yew::{Reducible, UseReducerHandle};
 use yew_router::prelude::*;
 
 pub mod components;
-
-lazy_static! {
-    pub static ref DOMAIN_API: String =
-        std::env::var("DOMAIN_API").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
-}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum Role {
