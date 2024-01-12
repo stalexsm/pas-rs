@@ -59,10 +59,9 @@ jobs:
               rm PID.txt
             fi
             echo "Starting the Rust application..."
-            ./backend & echo $! > PID.txt
-
-            sleep 5
-
+            ./backend > output.log 2>&1 &
+            echo $! > PID.txt
+            sleep 2
             if [ -e PID.txt ]; then
               echo "Rust application started successfully with PID: $(cat PID.txt)"
             else
