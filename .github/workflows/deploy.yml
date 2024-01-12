@@ -8,6 +8,7 @@ on:
 env:
   SQLX_OFFLINE: false
   DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWD }}@${{ secrets.HOST }}:${{ secrets.DB_PORT }}/postgres
+  DOMAIN_API: ${{ vars.DOMAIN_API }}
 
 jobs:
   deploy-backend:
@@ -88,7 +89,7 @@ jobs:
       - name: Build & Create Archive
         run: |
           cd frontend
-          trunk build --release --public-url http://pas.stalexsm.ru
+          trunk build --release
           tar -zcvf deploy.tar.gz $(ls -d dist )
 
       - name: SCP to Server
