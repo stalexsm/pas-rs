@@ -8,6 +8,7 @@ on:
 env:
   SQLX_OFFLINE: false
   DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWD }}@${{ secrets.HOST }}:${{ secrets.DB_PORT }}/postgres
+  TRUNK_PUBLIC_URL: http://pas.stalexsm.ru
 
 jobs:
   deploy-backend:
