@@ -1,5 +1,5 @@
 use super::ProducedGood;
-use crate::{components::rbs::product::Product, ResponseItems};
+use crate::{components::rbs::product::Product, ResponseItems, DOMAIN_API};
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
 use wasm_bindgen::JsCast;
@@ -41,8 +41,9 @@ pub fn modal(props: &Props) -> Html {
                         header_bearer.push_str(&t);
                     }
 
+                    let path = format!("{}/api/products", *DOMAIN_API);
                     let response =
-                        http::Request::get("/api/products") // todo helpers
+                        http::Request::get(&path) // todo helpers
                             .header("Content-Type", "application/json")
                             .header("Authorization", &header_bearer)
                             .query([("page", "1"), ("per_page", "10000")])

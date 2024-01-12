@@ -10,7 +10,7 @@ use crate::{
         elements::{error::AlertError, input::Input},
         ResponseError,
     },
-    AppContext, Route, User,
+    AppContext, Route, User, DOMAIN_API,
 };
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -69,7 +69,8 @@ pub fn auth() -> Html {
         let cloned_detail = cloned_detail.clone();
         let cloned_alert_visible = cloned_alert_visible.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            match http::Request::post("http://127.0.0.1:8000/api/auth")
+            let path = format!("{}/api/auth", *DOMAIN_API);
+            match http::Request::post(&path)
                 .header("Content-Type", "application/json")
                 .json(&request_data)
                 .unwrap()
@@ -84,7 +85,9 @@ pub fn auth() -> Html {
                             .expect("Не удалось записать токен в локальное хранилище!");
 
                         let header_bearer = format!("Bearer {}", response_result.token);
-                        let response_user = http::Request::get("/api/current")
+
+                        let path = format!("{}/api/current", *DOMAIN_API);
+                        let response_user = http::Request::get(&path)
                             .header("Content-Type", "application/json")
                             .header("Authorization", &header_bearer)
                             .send()

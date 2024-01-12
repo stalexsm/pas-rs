@@ -8,7 +8,7 @@ use frontend::{
         rbs::{measure::component::MeasureUnitComponent, product::component::ProductComponent},
         user::component::UserComponent,
     },
-    AppContext, AppStateContext, Route, User,
+    AppContext, AppStateContext, Route, User, DOMAIN_API,
 };
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
@@ -36,7 +36,8 @@ pub fn app() -> Html {
                 if let Some(t) = token.clone() {
                     header_bearer.push_str(&t);
 
-                    match http::Request::get("/api/current")
+                    let path = format!("{}/api/current", *DOMAIN_API);
+                    match http::Request::get(&path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .send()

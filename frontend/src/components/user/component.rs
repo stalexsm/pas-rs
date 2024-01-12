@@ -11,7 +11,7 @@ use crate::{
         user::{list::UserList, modal::Modal},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -54,7 +54,8 @@ pub fn user() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let response = http::Request::get("/api/users")
+                let path = format!("{}/api/users", *DOMAIN_API);
+                let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -120,9 +121,8 @@ pub fn user() -> Html {
                     role,
                     blocked,
                 };
-                // Хак для Home
-                let path = "/api/users";
 
+                let path = format!("{}/api/users", *DOMAIN_API);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -136,7 +136,7 @@ pub fn user() -> Html {
                         .await
                         .unwrap();
                 } else {
-                    let _: ResponseId = http::Request::post(path)
+                    let _: ResponseId = http::Request::post(&path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .json(&req_data)

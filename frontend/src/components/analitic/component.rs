@@ -3,7 +3,7 @@ use crate::{
         analitic::{list::AnaliticList, Analitic},
         header::component::HeaderComponent,
     },
-    AppContext, Route, User,
+    AppContext, Route, User, DOMAIN_API,
 };
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
@@ -63,7 +63,8 @@ pub fn analitic() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let response = http::Request::get("/api/analitics")
+                let path = format!("{}/api/analitics", *DOMAIN_API);
+                let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([

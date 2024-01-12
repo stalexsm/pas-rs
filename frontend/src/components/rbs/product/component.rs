@@ -16,7 +16,7 @@ use crate::{
         rbs::product::{list::ProductList, modal::Modal},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -57,7 +57,8 @@ pub fn product() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let response = http::Request::get("/api/products")
+                let path = format!("{}/api/products", *DOMAIN_API);
+                let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -141,9 +142,8 @@ pub fn product() -> Html {
                     measure_unit_id,
                     name,
                 };
-                // Хак для Home
-                let path = "/api/products";
 
+                let path = format!("{}/api/products", *DOMAIN_API);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -157,7 +157,7 @@ pub fn product() -> Html {
                         .await
                         .unwrap();
                 } else {
-                    let _: ResponseId = http::Request::post(path)
+                    let _: ResponseId = http::Request::post(&path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .json(&req_data)
@@ -198,8 +198,7 @@ pub fn product() -> Html {
             let cloned_rendered = cloned_rendered.clone();
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let path = "/api/products";
-
+                let path = format!("{}/api/products", *DOMAIN_API);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::delete(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")

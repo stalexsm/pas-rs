@@ -13,7 +13,7 @@ use crate::{
         home::{list::ProducedGoodList, modal::Modal, ProducedGood},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User, DOMAIN_API,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -60,7 +60,8 @@ pub fn home() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let response = http::Request::get("/api/produced-goods")
+                let path = format!("{}/api/produced-goods", *DOMAIN_API);
+                let response = http::Request::get(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -135,9 +136,8 @@ pub fn home() -> Html {
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestDataAdj { cnt };
-                // Хак для Home
-                let path = "/api/produced-goods";
 
+                let path = format!("{}/api/produced-goods", *DOMAIN_API);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::post(&format!("{}/{}/adj", path, item.id))
                         .header("Content-Type", "application/json")
@@ -184,9 +184,8 @@ pub fn home() -> Html {
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestData { product_id, cnt };
-                // Хак для Home
-                let path = "/api/produced-goods";
 
+                let path = format!("{}/api/produced-goods", *DOMAIN_API);
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
                         .header("Content-Type", "application/json")
@@ -200,7 +199,7 @@ pub fn home() -> Html {
                         .await
                         .unwrap();
                 } else {
-                    let _: ResponseId = http::Request::post(path)
+                    let _: ResponseId = http::Request::post(&path)
                         .header("Content-Type", "application/json")
                         .header("Authorization", &header_bearer)
                         .json(&req_data)

@@ -6,7 +6,7 @@ use yew_router::hooks::{use_location, use_navigator};
 use yew_router::prelude::*;
 
 use crate::components::header::modal::Modal;
-use crate::{AppContext, ResponseMsg, Role, Route, User};
+use crate::{AppContext, ResponseMsg, Role, Route, User, DOMAIN_API};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
@@ -74,7 +74,8 @@ pub fn header() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                http::Request::post("/api/logout")
+                let path = format!("{}/api/logout", *DOMAIN_API);
+                http::Request::post(&path)
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .send()
@@ -119,7 +120,7 @@ pub fn header() -> Html {
                 let req_data = RequestData { passwd1, passwd2 };
 
                 if let Some(current_user) = cloned_current_user {
-                    let path = "/api/users";
+                    let path = format!("{}/api/users", *DOMAIN_API);
                     let _: ResponseMsg =
                         http::Request::patch(&format!("{}/{}/passwd", path, current_user.id))
                             .header("Content-Type", "application/json")
