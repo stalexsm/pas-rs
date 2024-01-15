@@ -146,7 +146,7 @@ pub fn modal(props: &Props) -> Html {
                                     placeholder="Введите ФИО"
                                     value={(*fio).clone()}
                                 />
-                                <label for="role" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Ед. измерения"}</label>
+                                <label for="role" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Роль"}</label>
                                 <select
                                     disabled={props.item.as_ref().map_or_else(|| false, |it| props.current_user.as_ref().map_or(false, |u| u.id == it.id))}
                                     onchange={onchange_role}
