@@ -10,7 +10,7 @@ pub mod rbs;
 pub mod user;
 
 // Для пагинации
-const PER_PAGE: i64 = 5;
+const PER_PAGE: i64 = 8;
 
 pub trait SelectableItem {
     // Для возможности использовать объект для select

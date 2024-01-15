@@ -170,8 +170,8 @@ pub fn user() -> Html {
                 {"Добавить"}
             </button>
         </div>
-        <div class="overflow-hidden rounded-lg border border-gray-200 shadow-md m-5">
-            <table class="w-full border-collapse bg-white text-left text-sm text-gray-500">
+        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md m-5">
+            <table class="w-full border-collapse bg-white text-left text-sm text-gray-500 table-auto">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
