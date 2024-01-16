@@ -6,7 +6,7 @@ use yew_router::hooks::{use_location, use_navigator};
 use yew_router::prelude::*;
 
 use crate::components::header::modal::Modal;
-use crate::{AppContext, ResponseMsg, Role, Route, User};
+use crate::{check_is_admin, AppContext, ResponseMsg, Route, User};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
@@ -27,7 +27,7 @@ pub fn header() -> Html {
 
     let mut menus: Vec<(Route, String)> = vec![(Route::Home, String::from("Производство"))];
     if let Some(u) = current_user.clone() {
-        if [Role::Admin.to_string(), Role::Developer.to_string()].contains(&u.role) {
+        if check_is_admin(u.role) {
             menus.extend(vec![
                 (Route::Product, String::from("Товары")),
                 (Route::MeasureUnit, String::from("Единицы измерения")),

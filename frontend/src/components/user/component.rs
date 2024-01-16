@@ -1,5 +1,6 @@
 use gloo::storage::{LocalStorage, Storage};
 use gloo_net::http;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
@@ -12,14 +13,14 @@ use crate::{
         user::{list::UserList, modal::Modal},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Role, Route, User,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
     email: String,
     fio: Option<String>,
-    role: String,
+    role: Role,
     blocked: Option<bool>,
 }
 
@@ -121,6 +122,9 @@ pub fn user() -> Html {
                     role,
                     blocked,
                 };
+
+                debug!("{:?}", req_data);
+
                 // Хак для Home
                 let path = "/api/users";
 

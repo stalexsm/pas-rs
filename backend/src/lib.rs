@@ -36,8 +36,7 @@ where
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "role")]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Role {
     Developer,
     Admin,
@@ -52,7 +51,7 @@ impl From<&str> for Role {
             "Developer" => Role::Developer,
             "Admin" => Role::Admin,
             "Director" => Role::Director,
-            "User" => Role::Developer,
+            "User" => Role::User,
             _ => Role::User,
         }
     }

@@ -1,4 +1,3 @@
-use log::debug;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlSelectElement;
 use yew::prelude::*;
@@ -64,11 +63,6 @@ pub fn modal(props: &Props) -> Html {
             }
         })
     };
-
-    debug!("{:?}", passwd1);
-    debug!("{:?}", passwd2);
-    debug!("{:?}", passwd2 == passwd1);
-    debug!("{:?}", matched_passwd);
 
     html! {
         <div>

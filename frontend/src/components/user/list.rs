@@ -63,12 +63,12 @@ pub fn user_lists(
                     </div>
                     </th>
                     <td class="px-6 py-4">{
-                        if item.role == Role::Admin.to_string() {
-                            {"Администратор"}
-                        } else if  item.role == Role::Developer.to_string() {
-                            {"Разработчик"}
-                        } else {
-                            {"Пользователь"}
+                        match item.role {
+                            Role::Developer => {"Разработчик"},
+                            Role::Admin => {"Администратор"},
+                            Role::Director => {"Руководитель"},
+                            Role::User => {"Пользователь"},
+
                         }
                     }</td>
                     <td class="px-6 py-4">

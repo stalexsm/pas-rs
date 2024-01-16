@@ -1,25 +1,51 @@
+use core::fmt;
+
 use serde::{Deserialize, Serialize};
 use yew::{Reducible, UseReducerHandle};
 use yew_router::prelude::*;
 
 pub mod components;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum Role {
     Developer,
     Admin,
+    Director,
+
+    #[default]
     User,
 }
 
-impl ToString for Role {
-    fn to_string(&self) -> String {
-        // Преобразрвание в String
-        match self {
-            Role::Developer => "Developer".to_owned(),
-            Role::User => "User".to_owned(),
-            Role::Admin => "Admin".to_owned(),
+impl fmt::Display for Role {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl From<&str> for Role {
+    fn from(value: &str) -> Self {
+        // Получение перечисления Ролей из ссылки на строку
+        match value {
+            "Developer" => Role::Developer,
+            "Admin" => Role::Admin,
+            "Director" => Role::Director,
+            "User" => Role::User,
+            _ => Role::User,
         }
     }
+}
+
+impl From<String> for Role {
+    fn from(value: String) -> Self {
+        // Получение перечисления Ролей из строки
+        Role::from(value.as_str())
+    }
+}
+
+pub fn check_is_admin(role: Role) -> bool {
+    // Вспомогательная функция для проверки админских ролей
+
+    matches!(role, Role::Developer | Role::Admin)
 }
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
@@ -60,7 +86,7 @@ pub struct ResponseId {
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 pub struct User {
     pub id: i64,
-    pub role: String,
+    pub role: Role,
     pub email: String,
     pub passwd: Option<String>,
     pub fio: Option<String>,

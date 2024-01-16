@@ -10,7 +10,7 @@ pub struct Props {
     pub item: Option<User>,
 
     pub toggle_modal: Callback<MouseEvent>,
-    pub on_save: Callback<(String, Option<String>, String, Option<bool>)>,
+    pub on_save: Callback<(String, Option<String>, Role, Option<bool>)>,
 }
 
 #[function_component(Modal)]
@@ -19,7 +19,7 @@ pub fn modal(props: &Props) -> Html {
 
     let email = use_state_eq(|| "".to_string());
     let fio = use_state_eq(|| None);
-    let role = use_state_eq(|| "".to_string());
+    let role = use_state_eq(Role::default);
     let blocked = use_state_eq(|| false);
 
     {
@@ -38,7 +38,7 @@ pub fn modal(props: &Props) -> Html {
                 } else {
                     cloned_email.set("".to_string());
                     cloned_fio.set(Some("".to_string()));
-                    cloned_role.set(Role::User.to_string());
+                    cloned_role.set(Role::User);
                     cloned_blocked.set(false);
                 }
             }
@@ -75,7 +75,7 @@ pub fn modal(props: &Props) -> Html {
             .unchecked_into::<HtmlSelectElement>()
             .value();
 
-        cloned_role.set(value);
+        cloned_role.set(Role::from(value));
     });
 
     let cloned_blocked = blocked.clone();
@@ -97,7 +97,7 @@ pub fn modal(props: &Props) -> Html {
             cloned_on_save.emit((
                 (*cloned_email).clone(),
                 (*cloned_fio).clone(),
-                (*cloned_role).clone(),
+                *cloned_role,
                 Some(*cloned_blocked),
             ));
         })
@@ -153,9 +153,9 @@ pub fn modal(props: &Props) -> Html {
                                     id="role"
                                     class="mb-5 mt-2 text-gray-600 focus:outline-none focus:border focus:border-indigo-700 font-normal w-full h-10 flex items-center pl-3 text-sm border-gray-300 rounded border"
                                     placeholder="Выберите Ед. измерения">
-                                    {[(Role::Admin.to_string(), "Администратор".to_string()), (Role::User.to_string(), "Пользователь".to_string())].iter().map(|(role_id, name)| {
+                                    {[(Role::Admin, "Администратор"), (Role::User, "Пользователь")].iter().map(|(role, name)| {
                                             html! {
-                                                <option selected={props.item.as_ref().map_or_else(|| false, |it| &it.role == role_id)} value={role_id.clone()}>{name}</option>
+                                                <option selected={props.item.as_ref().map_or_else(|| false, |it| &it.role == role)} value={role.to_string()}>{name}</option>
                                             }
                                         }).collect::<Html>()
                                     }
