@@ -7,6 +7,7 @@ use yew_router::hooks::{use_location, use_navigator};
 use crate::{
     components::{
         elements::paginate::{Paginate, Q},
+        footer::Footer,
         header::component::HeaderComponent,
         user::{list::UserList, modal::Modal},
         PER_PAGE,
@@ -210,6 +211,8 @@ pub fn user() -> Html {
             {toggle_modal}
             {on_save}
         />
+
+        <Footer />
 
         </>
     }

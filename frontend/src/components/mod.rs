@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 pub mod analitic;
 pub mod auth;
 pub mod elements;
+pub mod footer;
 pub mod header;
 pub mod home;
 pub mod not_found;

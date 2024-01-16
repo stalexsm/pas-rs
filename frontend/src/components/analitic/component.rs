@@ -1,6 +1,7 @@
 use crate::{
     components::{
         analitic::{list::AnaliticList, Analitic},
+        footer::Footer,
         header::component::HeaderComponent,
     },
     AppContext, Route, User,
@@ -198,6 +199,8 @@ pub fn analitic() -> Html {
                 </tbody>
             </table>
         </div>
+
+        <Footer />
 
         </>
     }

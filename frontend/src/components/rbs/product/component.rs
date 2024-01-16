@@ -11,6 +11,7 @@ use crate::{
             modal::ModalDelete,
             paginate::{Paginate, Q},
         },
+        footer::Footer,
         header::component::HeaderComponent,
         rbs::product::Product,
         rbs::product::{list::ProductList, modal::Modal},
@@ -277,6 +278,8 @@ pub fn product() -> Html {
             {toggle_modal}
             {on_save}
         />
+
+        <Footer />
 
         </>
     }

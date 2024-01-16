@@ -9,6 +9,7 @@ use yew_router::hooks::{use_location, use_navigator};
 use crate::{
     components::{
         elements::paginate::{Paginate, Q},
+        footer::Footer,
         header::component::HeaderComponent,
         home::{list::ProducedGoodList, modal::Modal, ProducedGood},
         PER_PAGE,
@@ -276,6 +277,8 @@ pub fn home() -> Html {
             {on_save}
             {on_save_adj}
         />
+
+        <Footer />
 
         </>
     }

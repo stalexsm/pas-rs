@@ -11,6 +11,7 @@ use crate::{
             modal::ModalDelete,
             paginate::{Paginate, Q},
         },
+        footer::Footer,
         header::component::HeaderComponent,
         rbs::measure::{list::MeasureUnitList, modal::Modal, MeasureUnit},
         PER_PAGE,
@@ -271,6 +272,8 @@ pub fn measure_unit() -> Html {
             {toggle_modal}
             {on_save}
         />
+
+        <Footer />
         </>
     }
 }
