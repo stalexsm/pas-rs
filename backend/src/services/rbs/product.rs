@@ -6,7 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::{services::Items, AppError, CurrentUser, Role};
+use crate::{check_is_admin, services::Items, AppError, CurrentUser};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -21,7 +21,7 @@ pub async fn create_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания продукта
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -49,7 +49,7 @@ pub async fn edit_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования продукта
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -152,7 +152,7 @@ pub async fn detail_product(
 ) -> Result<Item, AppError> {
     // Бизнес логика получения продуктв
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -199,7 +199,7 @@ pub async fn delete_product(
 ) -> Result<(), AppError> {
     // Бизнес логика удаления продуктв
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

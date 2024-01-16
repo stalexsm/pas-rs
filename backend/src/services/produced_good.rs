@@ -7,7 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::{services::Items, AppError, CurrentUser, Role};
+use crate::{check_is_admin, services::Items, AppError, CurrentUser};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -44,7 +44,7 @@ pub async fn edit_produced_good(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования продукта
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -121,7 +121,7 @@ pub async fn get_produced_goods(
     // Бизнес логика получения списка продуктв
 
     let mut where_additional = String::new();
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         let current_date = chrono::Utc::now().date_naive();
         where_additional.push_str(&format!(
             "and produced_goods.user_id = {0} and produced_goods.created_at between '{1} 00:00:00' and '{1} 23:59:59'",
@@ -206,7 +206,7 @@ pub async fn detail_produced_good(
 ) -> Result<Item, AppError> {
     // Бизнес логика получения продуктв
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -323,7 +323,7 @@ pub async fn get_analitics(
 ) -> Result<Vec<Analitics>, AppError> {
     // Бизнес логика получения продуктв
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::NOT_FOUND,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

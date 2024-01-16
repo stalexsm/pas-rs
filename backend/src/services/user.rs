@@ -7,7 +7,7 @@ use bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::{AppError, CurrentUser, Role};
+use crate::{check_is_admin, AppError, CurrentUser, Role};
 
 use super::Items;
 
@@ -32,7 +32,7 @@ pub async fn create_user(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания пользователя
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -69,7 +69,7 @@ pub async fn edit_user(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -145,7 +145,7 @@ fn page() -> i64 {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
-    pub role: String,
+    pub role: Role,
     pub email: String,
     pub fio: Option<String>,
     pub blocked: bool,
@@ -160,7 +160,7 @@ pub async fn get_users(
 ) -> Result<Items<Item>, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -203,7 +203,7 @@ pub async fn detail_user(
 ) -> Result<Item, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if ![Role::Admin.to_string(), Role::Developer.to_string()].contains(&current_user.role) {
+    if !check_is_admin(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

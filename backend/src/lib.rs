@@ -36,28 +36,45 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "role")]
 pub enum Role {
     Developer,
     Admin,
+    Director,
     User,
 }
 
-impl ToString for Role {
-    fn to_string(&self) -> String {
-        // Преобразрвание в String
-        match self {
-            Role::Developer => "Developer".to_string(),
-            Role::User => "User".to_string(),
-            Role::Admin => "Admin".to_string(),
+impl From<&str> for Role {
+    fn from(value: &str) -> Self {
+        // Получение перечисления Ролей из ссылки на строку
+        match value {
+            "Developer" => Role::Developer,
+            "Admin" => Role::Admin,
+            "Director" => Role::Director,
+            "User" => Role::Developer,
+            _ => Role::User,
         }
     }
+}
+
+impl From<String> for Role {
+    fn from(value: String) -> Self {
+        // Получение перечисления Ролей из строки
+        Role::from(value.as_str())
+    }
+}
+
+pub fn check_is_admin(role: Role) -> bool {
+    // Вспомогательная функция для проверки админских ролей
+
+    matches!(role, Role::Developer | Role::Admin)
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CurrentUser {
     pub id: i64,
-    pub role: String,
+    pub role: Role,
     pub email: String,
     pub fio: Option<String>,
     pub blocked: bool,
