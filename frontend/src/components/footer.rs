@@ -17,7 +17,7 @@ pub fn footer() -> Html {
     }
 
     html! {
-        <div class="flex items-end w-full insert-x-0 bottom-0 bg-white fixed">
+        <div class="sticky top-[100vh] bg-white">
             <footer class="w-full text-gray-900 bg-gray-100 body-font">
                 <div class="bg-gray-150">
                     <div class="container px-5 py-4 mx-auto">
