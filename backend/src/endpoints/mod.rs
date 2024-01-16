@@ -1,4 +1,4 @@
 pub mod init;
-pub mod produced_good;
+pub mod produced_goods;
 pub mod rbs;
-pub mod user;
+pub mod users;

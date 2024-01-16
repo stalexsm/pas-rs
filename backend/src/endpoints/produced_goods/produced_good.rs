@@ -1,5 +1,5 @@
-use crate::services::produced_good::{
-    self as serv, Analitics, Item, RequestBody, RequestBodyAdj, Q, QA,
+use crate::services::produced_goods::produced_good::{
+    self as serv, Item, RequestBody, RequestBodyAdj, Q,
 };
 use crate::services::Items;
 use crate::{AppError, CurrentUser};
@@ -78,16 +78,4 @@ pub async fn add_adj_produced_goods(
         "detail".to_string(),
         "OK".to_string(),
     )])))
-}
-
-pub async fn get_analitics(
-    State(pool): State<PgPool>,
-    Extension(current_user): Extension<CurrentUser>,
-    Query(q): Query<QA>,
-) -> Result<Json<Vec<Analitics>>, AppError> {
-    // Метод получения списка единиц измерения
-
-    let items = serv::get_analitics(State(pool), Extension(current_user), Query(q)).await?;
-
-    Ok(Json(items))
 }

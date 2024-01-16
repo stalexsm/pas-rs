@@ -1,4 +1,4 @@
-use crate::services::user::{self as serv, Item, RequestBody, RequestBodyPasswd, Q};
+use crate::services::users::user::{self as serv, Item, RequestBody, RequestBodyPasswd, Q};
 use crate::services::Items;
 use crate::{AppError, CurrentUser};
 use axum::extract::{Path, Query};

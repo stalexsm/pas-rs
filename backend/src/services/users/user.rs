@@ -7,9 +7,7 @@ use bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::{check_is_admin, AppError, CurrentUser, Role};
-
-use super::Items;
+use crate::{check_is_admin, services::Items, AppError, CurrentUser, Role};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -17,6 +15,7 @@ pub struct RequestBody {
     fio: String,
     role: String,
     blocked: Option<bool>,
+    organization_id: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -46,9 +45,10 @@ pub async fn create_user(
         let hash_passwd = bcrypt::hash("password", bcrypt::DEFAULT_COST)?;
         let row: (i64,) = sqlx::query_as(
             "insert
-            into users (role, email, fio, passwd, blocked) values
+            into users (organization_id, role, email, fio, passwd, blocked) values
             ($1, $2, $3, $4, $5) returning id",
         )
+        .bind(body.organization_id)
         .bind(body.role)
         .bind(body.email)
         .bind(body.fio)
@@ -145,6 +145,7 @@ fn page() -> i64 {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
+    pub organization_id: Option<i64>,
     pub role: Role,
     pub email: String,
     pub fio: Option<String>,
@@ -170,6 +171,7 @@ pub async fn get_users(
             Item,
             "select
             id,
+            organization_id,
             role,
             email,
             fio,
@@ -213,6 +215,7 @@ pub async fn detail_user(
             Item,
             "select
             id,
+            organization_id,
             role,
             email,
             fio,
@@ -245,6 +248,7 @@ pub async fn current_user(
         Item,
         "select
         id,
+        organization_id,
         role,
         email,
         fio,

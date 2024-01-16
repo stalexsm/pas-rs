@@ -9,15 +9,18 @@ use axum::{
 use backend::{
     endpoints::{
         init::{authorization, logout},
-        produced_good::{
-            add_adj_produced_goods, create_produced_good, detail_produced_good, edit_produced_good,
-            get_analitics, get_produced_goods,
+        produced_goods::{
+            analitic::get_analitics,
+            produced_good::{
+                add_adj_produced_goods, create_produced_good, detail_produced_good,
+                edit_produced_good, get_produced_goods,
+            },
         },
         rbs::{
             measure::{create_measure, delete_measure, detail_measure, edit_measure, get_measures},
             product::{create_product, delete_product, detail_product, edit_product, get_products},
         },
-        user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
+        users::user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
     },
     CurrentUser,
 };
