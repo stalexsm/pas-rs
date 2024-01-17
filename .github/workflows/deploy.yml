@@ -63,7 +63,7 @@ jobs:
   #           echo $! > PID.txt
 
   deploy-frontend:
-    needs: deploy-backend
+    # needs: deploy-backend
     runs-on: ubuntu-latest
 
     steps:
