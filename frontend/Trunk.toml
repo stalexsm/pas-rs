@@ -8,3 +8,12 @@ port = 8080
 
 [[proxy]]
 backend = "http://127.0.0.1:8000/api"
+
+[build]
+target = "index.html"
+dist = "dist"
+
+[[hooks]]
+stage = "build"
+command = "sh"
+command_arguments = ["-c", "tailwindcss -i ./assets/input.css -o ./assets/css/tailwind.css"]

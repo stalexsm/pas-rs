@@ -156,8 +156,15 @@ pub fn header() -> Html {
                     <span class="sr-only">{"Меню"}</span>
                     // Icon when menu is closed.
                     // Menu open: "hidden", Menu closed: "block"
-                    <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    <svg
+                        class="block h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                     // Icon when menu is open.
                     // Menu open: "block", Menu closed: "hidden"
@@ -168,7 +175,7 @@ pub fn header() -> Html {
                 </div>
                 <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div style="min-width: 40px;" class="flex flex-shrink-0 items-center">
-                    <img class="h-8 w-auto" src="./assets/img/logo.svg" alt="Your Company"/>
+                    <img class="h-8 w-auto" src="./assets/img/logo.svg" alt="PAS"/>
                 </div>
                 <div class="hidden sm:ml-6 sm:block">
                     <div class="flex space-x-4">

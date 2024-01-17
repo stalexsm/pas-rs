@@ -27,7 +27,10 @@ use backend::{
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tokio::net::TcpListener;
 
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{
+    compression::CompressionLayer,
+    cors::{Any, CorsLayer},
+};
 use uuid::Uuid;
 
 use std::time::Duration;
@@ -36,7 +39,8 @@ use std::time::Duration;
 async fn main() {
     // Run Application
 
-    tracing_subscriber::fmt::init();
+    // Ведение журнала
+    tracing_subscriber::fmt().init();
 
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://postgres:postgres@127.0.0.1:54320/postgres".to_string());
@@ -93,11 +97,12 @@ async fn main() {
                 .allow_headers(Any)
                 .allow_methods(Any),
         )
+        .layer(CompressionLayer::new())
         .with_state(pool);
 
     // run it with hyper
     let listener = TcpListener::bind("127.0.0.1:8000").await.unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
+    tracing::info!("listening on {}", listener.local_addr().unwrap());
 
     axum::serve(listener, app).await.unwrap();
 }
