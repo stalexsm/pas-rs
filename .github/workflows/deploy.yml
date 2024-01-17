@@ -10,57 +10,57 @@ env:
   DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWD }}@${{ secrets.HOST }}:${{ secrets.DB_PORT }}/postgres
 
 jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
+  # deploy-backend:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+  #     - name: Install Rust
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
 
-      - name: Migrate database
-        run: |
-          cd backend
-          cargo install sqlx-cli
-          sqlx migrate run
+  #     - name: Migrate database
+  #       run: |
+  #         cd backend
+  #         cargo install sqlx-cli
+  #         sqlx migrate run
 
-      - name: Build
-        run: |
-          cd backend
-          cargo build --release
+  #     - name: Build
+  #       run: |
+  #         cd backend
+  #         cargo build --release
 
-      - name: SCP to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          password: ${{ secrets.PASSWD }}
-          source: "target/release/backend"
-          target: "/home/pas-rs"
-          strip_components: 2
+  #     - name: SCP to Server
+  #       uses: appleboy/scp-action@master
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         username: ${{ secrets.USER }}
+  #         password: ${{ secrets.PASSWD }}
+  #         source: "target/release/backend"
+  #         target: "/home/pas-rs"
+  #         strip_components: 2
 
-      - name: SSH into Server Run Backend
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          password: ${{ secrets.PASSWD }}
-          script_stop: true
-          script: |
-            cd /home/pas-rs
-            if [ -e PID.txt ]; then
-              echo "Stopping existing process..."
-              kill -9 $(cat PID.txt) || true
-              rm PID.txt
-            fi
-            echo "Starting the Rust application..."
-            ./backend > output.log 2>&1 &
-            echo $! > PID.txt
+  #     - name: SSH into Server Run Backend
+  #       uses: appleboy/ssh-action@master
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         username: ${{ secrets.USER }}
+  #         password: ${{ secrets.PASSWD }}
+  #         script_stop: true
+  #         script: |
+  #           cd /home/pas-rs
+  #           if [ -e PID.txt ]; then
+  #             echo "Stopping existing process..."
+  #             kill -9 $(cat PID.txt) || true
+  #             rm PID.txt
+  #           fi
+  #           echo "Starting the Rust application..."
+  #           ./backend > output.log 2>&1 &
+  #           echo $! > PID.txt
 
   deploy-frontend:
     needs: deploy-backend
