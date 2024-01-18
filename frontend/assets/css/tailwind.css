@@ -538,6 +538,12 @@ video {
   width: 100%;
 }
 
+@media (min-width: 390px) {
+  .container {
+    max-width: 390px;
+  }
+}
+
 @media (min-width: 640px) {
   .container {
     max-width: 640px;
@@ -872,6 +878,10 @@ video {
   width: 0.125rem;
 }
 
+.w-1 {
+  width: 0.25rem;
+}
+
 .w-10 {
   width: 2.5rem;
 }
@@ -924,6 +934,10 @@ video {
   width: 100vw;
 }
 
+.min-w-\[188px\] {
+  min-width: 188px;
+}
+
 .max-w-7xl {
   max-width: 80rem;
 }
@@ -938,6 +952,14 @@ video {
 
 .flex-1 {
   flex: 1 1 0%;
+}
+
+.flex-auto {
+  flex: 1 1 auto;
+}
+
+.flex-none {
+  flex: none;
 }
 
 .flex-shrink {
@@ -982,6 +1004,18 @@ video {
   resize: both;
 }
 
+.auto-cols-max {
+  grid-auto-columns: max-content;
+}
+
+.grid-flow-row {
+  grid-auto-flow: row;
+}
+
+.grid-flow-col {
+  grid-auto-flow: column;
+}
+
 .flex-row-reverse {
   flex-direction: row-reverse;
 }
@@ -1024,6 +1058,14 @@ video {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.justify-items-end {
+  justify-items: end;
+}
+
+.justify-items-stretch {
+  justify-items: stretch;
 }
 
 .gap-1 {
@@ -1965,6 +2007,16 @@ video {
   }
 }
 
+@media (min-width: 390px) {
+  .xs\:grid {
+    display: grid;
+  }
+
+  .xs\:justify-items-end {
+    justify-items: end;
+  }
+}
+
 @media (min-width: 640px) {
   .sm\:static {
     position: static;
@@ -2063,6 +2115,10 @@ video {
 
   .sm\:justify-start {
     justify-content: flex-start;
+  }
+
+  .sm\:justify-end {
+    justify-content: flex-end;
   }
 
   .sm\:justify-between {
