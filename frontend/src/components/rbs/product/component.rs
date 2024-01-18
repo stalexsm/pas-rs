@@ -234,9 +234,9 @@ pub fn product() -> Html {
                 {"Добавить"}
             </button>
         </div>
-        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md m-5">
+        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md m-5 max-h-[68%]">
             <table class="w-full border-collapse bg-white text-left text-sm text-gray-500 table-auto">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 sticky top-0">
                     <tr>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Название"}</th>

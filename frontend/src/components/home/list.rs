@@ -49,7 +49,7 @@ pub fn produced_good_lists(
             };
 
             // Color adj
-            let color_adj = if item.adj >= 0 {"green"} else {"red"};
+            let color_adj = if item.adj >= 0 {"text-green-600 text-green-50"} else {"text-red-600 text-red-50"};
             html! {
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">{item.id}</td>
@@ -62,7 +62,7 @@ pub fn produced_good_lists(
                     <td class="px-6 py-4">{item.user.fio.clone().unwrap_or_else(|| "N/A".to_string() )}</td>
                     <td class="px-6 py-4">
                     <span
-                        class={format!("inline-flex items-center gap-1 rounded-full bg-{0}-50 px-2 py-1 text-xs font-semibold text-{0}-600", color_adj)}
+                        class={format!("inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold {}", color_adj)}
                     >
                         {item.adj}
                     </span>

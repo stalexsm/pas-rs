@@ -190,7 +190,7 @@ pub fn modal(props: &Props) -> Html {
                                         </svg>
                                         {"Корректировка: "}
                                         <span
-                                            class={format!("font-medium rounded-full px-2 py-1 text-{0}-500 bg-{0}-50", if it.adj >= 0 {"green"} else {"red"})}
+                                            class={format!("font-medium rounded-full px-2 py-1 {}", if it.adj >= 0 {"text-green-500 bg-green-50"} else {"text-red-500 bg-red-50"})}
                                         >
                                             {it.adj}
                                         </span>
