@@ -21,6 +21,9 @@ pub struct Item {
 pub struct Q {
     pub date_one: chrono::NaiveDate,
     pub date_two: chrono::NaiveDate,
+
+    pub product: Option<String>,
+    pub user: Option<String>,
 }
 
 pub async fn get_analitics(
@@ -36,32 +39,44 @@ pub async fn get_analitics(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let rows = sqlx::query(
+        let mut where_additation = String::new();
+        if let Some(product) = q.product {
+            where_additation.push_str(&format!(" and products.name ilike '%{}%'", product));
+        }
+
+        if let Some(user) = q.user {
+            where_additation.push_str(&format!(" and users.fio ilike '%{}%'", user));
+        }
+
+        let rows = sqlx::query(&format!(
             r#"SELECT
-              products.id as id,
-              products.name as name,
-              measure_units.name as measure,
-              SUM(pg.cnt + COALESCE(pa.adjustment_cnt::bigint, 0))::bigint AS cnt
-            FROM
-              produced_goods pg
-              LEFT JOIN (
-                SELECT
-                  produced_good_id,
-                  SUM(cnt::integer) AS adjustment_cnt
+                  products.id as id,
+                  products.name as name,
+                  measure_units.name as measure,
+                  SUM(pg.cnt + COALESCE(pa.adjustment_cnt::bigint, 0))::bigint AS cnt
                 FROM
-                  produced_good_adjustments
+                  produced_goods pg
+                  LEFT JOIN (
+                    SELECT
+                      produced_good_id,
+                      SUM(cnt::integer) AS adjustment_cnt
+                    FROM
+                      produced_good_adjustments
+                    GROUP BY
+                      produced_good_id
+                  ) pa ON pa.produced_good_id = pg.id
+                  LEFT JOIN products on products.id = pg.product_id
+                  LEFT JOIN measure_units on measure_units.id = products.measure_unit_id
+                  LEFT JOIN users on users.id = pg.user_id
+                WHERE pg.created_at::date BETWEEN $1 AND $2
+                {}
                 GROUP BY
-                  produced_good_id
-              ) pa ON pa.produced_good_id = pg.id
-              LEFT JOIN products on products.id = pg.product_id
-              LEFT JOIN measure_units on measure_units.id = products.measure_unit_id
-            WHERE pg.created_at::date BETWEEN $1 AND $2
-            GROUP BY
-              products.id,
-              products.name,
-              measure_units.name
-            ORDER BY cnt DESC;"#,
-        )
+                  products.id,
+                  products.name,
+                  measure_units.name
+                ORDER BY cnt DESC;"#,
+            where_additation
+        ))
         .bind(q.date_one)
         .bind(q.date_two)
         .map(|row: PgRow| Item {

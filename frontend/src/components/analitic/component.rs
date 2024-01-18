@@ -18,6 +18,9 @@ use yew_router::hooks::{use_location, use_navigator};
 pub struct Q {
     date_one: chrono::NaiveDate,
     date_two: chrono::NaiveDate,
+
+    product: Option<String>,
+    user: Option<String>,
 }
 
 #[function_component(AnaliticComponent)]
@@ -49,50 +52,70 @@ pub fn analitic() -> Html {
             .unwrap_or(date_naive)
     });
 
+    let product = use_state_eq(|| location.query::<Q>().map(|it| it.product).unwrap_or(None));
+    let user = use_state_eq(|| location.query::<Q>().map(|it| it.user).unwrap_or(None));
+
     let items: UseStateHandle<Vec<Analitic>> = use_state_eq(Vec::new);
     {
         let items = items.clone();
         let navigator = use_navigator();
-        use_effect_with((*date_one, *date_two), move |(date_one, date_two)| {
-            let items = items.clone();
-            let cloned_date_one = *date_one;
-            let cloned_date_two = *date_two;
-            wasm_bindgen_futures::spawn_local(async move {
-                let mut header_bearer = String::from("Bearer ");
-                let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
-                if let Some(t) = token.clone() {
-                    header_bearer.push_str(&t);
-                }
+        use_effect_with(
+            (*date_one, *date_two, (*product).clone(), (*user).clone()),
+            move |(date_one, date_two, product, user)| {
+                let items = items.clone();
+                let cloned_date_one = *date_one;
+                let cloned_date_two = *date_two;
+                let cloned_product = (*product).clone();
+                let cloned_user = (*user).clone();
+                wasm_bindgen_futures::spawn_local(async move {
+                    let mut header_bearer = String::from("Bearer ");
+                    let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+                    if let Some(t) = token.clone() {
+                        header_bearer.push_str(&t);
+                    }
 
-                let response = http::Request::get("/api/analitics")
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", &header_bearer)
-                    .query([
-                        ("date_one", cloned_date_one.to_string().as_str()),
-                        ("date_two", cloned_date_two.to_string().as_str()),
-                    ])
-                    .send()
-                    .await
-                    .unwrap()
-                    .json::<Vec<Analitic>>()
-                    .await
-                    .unwrap();
+                    let _1 = cloned_date_one.to_string();
+                    let _2 = cloned_date_two.to_string();
+                    let mut q = vec![("date_one", _1.as_str()), ("date_two", _2.as_str())];
 
-                items.set(response);
+                    if let Some(product) = &cloned_product {
+                        q.push(("product", &product));
+                    }
 
-                if let Some(navigator) = navigator {
-                    navigator
-                        .push_with_query(
-                            &Route::Analitic,
-                            &Q {
-                                date_one: cloned_date_one,
-                                date_two: cloned_date_two,
-                            },
-                        )
+                    if let Some(user) = &cloned_user {
+                        q.push(("user", user));
+                    }
+
+                    let response = http::Request::get("/api/analitics")
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", &header_bearer)
+                        .query(q)
+                        .send()
+                        .await
+                        .unwrap()
+                        .json::<Vec<Analitic>>()
+                        .await
                         .unwrap();
-                }
-            });
-        });
+
+                    items.set(response);
+
+                    if let Some(navigator) = navigator {
+                        navigator
+                            .push_with_query(
+                                &Route::Analitic,
+                                &Q {
+                                    date_one: cloned_date_one,
+                                    date_two: cloned_date_two,
+
+                                    product: cloned_product,
+                                    user: cloned_user,
+                                },
+                            )
+                            .unwrap();
+                    }
+                });
+            },
+        );
     }
 
     let onchange_date_one = {
@@ -123,10 +146,85 @@ pub fn analitic() -> Html {
         })
     };
 
+    let onchange_product = {
+        let cloned_product = product.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
+
+            cloned_product.set(Some(value));
+        })
+    };
+
+    let onchange_user = {
+        let cloned_user = user.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
+
+            cloned_user.set(Some(value));
+        })
+    };
+
     html! {
         <>
         <HeaderComponent />
         <div class="flex justify-end mb-5">
+            <input
+                type="text"
+                onchange={onchange_product}
+                class="
+                    px-4
+                    py-2
+                    text-gray-600
+                    text-gray
+                    rounded-md
+                    mr-5
+                    mt-5
+                    font-normal
+                    text-sm
+                    rounded
+                    border
+                    border-gray-300
+                    focus:border-gray-700
+                    focus:border-indigo-700
+                    focus:border
+                    focus:outline-none
+                "
+                placeholder="Фильтр по товару"
+                value={(*product).clone()}
+            />
+            <input
+                type="text"
+                onchange={onchange_user}
+                class="
+                    px-4
+                    py-2
+                    text-gray-600
+                    text-gray
+                    rounded-md
+                    mr-5
+                    mt-5
+                    font-normal
+                    text-sm
+                    rounded
+                    border
+                    border-gray-300
+                    focus:border-gray-700
+                    focus:border-indigo-700
+                    focus:border
+                    focus:outline-none
+                "
+                placeholder="Фильтр по пользователю"
+                value={(*user).clone()}
+            />
+
             <input
                 type="date"
                 onchange={onchange_date_one}
