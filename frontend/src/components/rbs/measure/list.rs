@@ -1,5 +1,6 @@
 use super::MeasureUnit;
 use crate::User;
+use chrono::Local;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -51,7 +52,7 @@ pub fn measure_unit_list(
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">{item.id}</td>
                     <td class="px-6 py-4">{item.name.clone()}</td>
-                    <td class="px-6 py-4">{item.created_at.format("%d.%m.%Y %H:%M").to_string()}</td>
+                    <td class="px-6 py-4">{item.created_at.with_timezone(&Local).format("%d.%m.%Y %H:%M").to_string()}</td>
                     <td class="px-6 py-4">
                         <div class="flex justify-end gap-4">
                             <a

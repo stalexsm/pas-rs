@@ -1,4 +1,5 @@
 use crate::{Role, User};
+use chrono::Local;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -78,7 +79,7 @@ pub fn user_lists(
                         {if item.blocked {"Заблокирован"} else {"Разблокирован"}}
                     </span>
                     </td>
-                    <td class="px-6 py-4">{item.created_at.format("%d.%m.%Y %H:%M").to_string()}</td>
+                    <td class="px-6 py-4">{item.created_at.with_timezone(&Local).format("%d.%m.%Y %H:%M").to_string()}</td>
                     <td class="px-6 py-4">
                     <div class="flex justify-end gap-4">
                     if item.id != 1 {

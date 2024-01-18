@@ -1,5 +1,6 @@
 use super::ProducedGood;
 use crate::{check_is_admin, User};
+use chrono::Local;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -24,6 +25,7 @@ pub fn produced_good_lists(
     html! {
         <>
         {items.iter().map(|item|{
+
 
             // Generate onclick
             let on_edit = {
@@ -66,7 +68,7 @@ pub fn produced_good_lists(
                     </span>
                     </td>
                     <td class="px-6 py-4">{item.cnt + item.adj}</td>
-                    <td class="px-6 py-4">{item.created_at.format("%d.%m.%Y %H:%M").to_string()}</td>
+                    <td class="px-6 py-4">{item.created_at.with_timezone(&Local).format("%d.%m.%Y %H:%M").to_string()}</td>
                     <td class="px-6 py-4">
                     <div class="flex justify-end gap-4">
                         <a
