@@ -1,5 +1,3 @@
-use std::io::{Seek, SeekFrom};
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -100,7 +98,7 @@ pub async fn generate_excel(
     items: Vec<Item>,
     date_one: chrono::NaiveDate,
     date_two: chrono::NaiveDate,
-) -> Result<tempfile::NamedTempFile, AppError> {
+) -> Result<Vec<u8>, AppError> {
     let mut wookbook = Workbook::new();
 
     // formats
@@ -183,10 +181,7 @@ pub async fn generate_excel(
             .set_border(FormatBorder::Thin),
     );
 
-    let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-    let _ = wookbook.save(tmpfile.path());
+    let buffer = wookbook.save_to_buffer()?;
 
-    tmpfile.seek(SeekFrom::Start(0)).unwrap();
-
-    Ok(tmpfile)
+    Ok(buffer)
 }
