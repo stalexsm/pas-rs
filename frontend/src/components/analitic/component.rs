@@ -175,19 +175,28 @@ pub fn analitic() -> Html {
     html! {
         <>
         <HeaderComponent />
-        <div class="xs:grid xs:justify-items-end sm:flex sm:justify-end mb-5 min-w-96">
+        <div
+            class="
+                xs:grid
+                xs:gap-x-[15px]
+                xs:gap-y-[5px]
+                xs:grid-cols-2
+                sm:flex
+                sm:justify-end
+                my-2
+                mx-5
+            "
+        >
             <input
                 type="text"
                 onchange={onchange_product}
                 class="
-                    min-w-[188px]
+                    w-[calc((100vw - 2.5rem - 15px) / 2)]
                     px-4
                     py-2
                     text-gray-600
                     text-gray
                     rounded-md
-                    mr-5
-                    mt-5
                     font-normal
                     text-sm
                     rounded
@@ -205,14 +214,12 @@ pub fn analitic() -> Html {
                 type="text"
                 onchange={onchange_user}
                 class="
-                    min-w-[188px]
+                    w-[calc((100vw - 2.5rem - 15px) / 2)]
                     px-4
                     py-2
                     text-gray-600
                     text-gray
                     rounded-md
-                    mr-5
-                    mt-5
                     font-normal
                     text-sm
                     rounded
@@ -231,14 +238,12 @@ pub fn analitic() -> Html {
                 type="date"
                 onchange={onchange_date_one}
                 class="
-                    min-w-[188px]
+                    w-[calc((100vw - 2.5rem - 15px) / 2)]
                     px-4
                     py-2
                     text-gray-600
                     text-gray
                     rounded-md
-                    mr-5
-                    mt-5
                     font-normal
                     text-sm
                     rounded
@@ -256,14 +261,12 @@ pub fn analitic() -> Html {
                 type="date"
                 onchange={onchange_date_two}
                 class="
-                    min-w-[188px]
+                    w-[calc((100vw - 2.5rem - 15px) / 2)]
                     px-4
                     py-2
                     text-gray-600
                     text-gray
                     rounded-md
-                    mr-5
-                    mt-5
                     font-normal
                     text-sm
                     rounded
@@ -277,7 +280,7 @@ pub fn analitic() -> Html {
                 value={date_two.to_string()}
             />
         </div>
-        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md m-5 max-h-[68%]">
+        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md mx-5 my-2 max-h-[68%]">
             <table class="w-full border-collapse bg-white text-left text-sm text-gray-500 table-auto">
                 <thead class="bg-gray-50 sticky top-0">
                     <tr>

@@ -229,7 +229,7 @@ pub fn measure_unit() -> Html {
                 {"Добавить"}
             </button>
         </div>
-        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md m-5 max-h-[68%]">
+        <div class="overflow-auto rounded-lg border border-gray-200 shadow-md mx-5 my-2 max-h-[68%]">
             <table class="w-full border-collapse bg-white text-left text-sm text-gray-500 table-auto">
                 <thead class="bg-gray-50 sticky top-0">
                     <tr>
