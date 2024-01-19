@@ -10,7 +10,7 @@ use backend::{
     endpoints::{
         init::{authorization, logout},
         produced_goods::{
-            analitic::get_analitics,
+            analitic::{get_analitics, upload_report_in_excel},
             produced_good::{
                 add_adj_produced_goods, create_produced_good, detail_produced_good,
                 edit_produced_good, get_produced_goods,
@@ -84,6 +84,7 @@ async fn main() {
         )
         .route("/produced-goods/:id/adj", post(add_adj_produced_goods))
         .route("/analitics", get(get_analitics))
+        .route("/upload-report", post(upload_report_in_excel))
         .route_layer(middleware::from_fn_with_state(pool.clone(), authenticate))
         // Not Check Auth
         .route("/auth", post(authorization));

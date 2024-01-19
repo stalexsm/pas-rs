@@ -1,3 +1,5 @@
+use std::io::{Seek, SeekFrom};
+
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -7,7 +9,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::{check_is_admin, AppError, CurrentUser};
+use crate::{check_is_admin, empty_string_as_none, AppError, CurrentUser};
+use rust_xlsxwriter::*;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
@@ -22,6 +25,7 @@ pub struct Q {
     pub date_one: chrono::NaiveDate,
     pub date_two: chrono::NaiveDate,
 
+    #[serde(default, deserialize_with = "empty_string_as_none")]
     pub product: Option<String>,
     pub user: Option<String>,
 }
@@ -90,4 +94,99 @@ pub async fn get_analitics(
 
         Ok(rows)
     }
+}
+
+pub async fn generate_excel(
+    items: Vec<Item>,
+    date_one: chrono::NaiveDate,
+    date_two: chrono::NaiveDate,
+) -> Result<tempfile::NamedTempFile, AppError> {
+    let mut wookbook = Workbook::new();
+
+    // formats
+    let bold_fmt = Format::new().set_bold().set_border(FormatBorder::Thin);
+    let right_fmt = Format::new()
+        .set_align(FormatAlign::Right)
+        .set_border(FormatBorder::Thin);
+
+    // Add a worksheet to the workbook.
+    let worksheet = wookbook.add_worksheet();
+
+    // Set the column weight
+    worksheet.set_column_width(0, 8)?;
+    worksheet.set_column_width(1, 25)?;
+    worksheet.set_column_width(2, 15)?;
+    worksheet.set_column_width(3, 25)?;
+
+    let _ = worksheet.merge_range(
+        0,
+        0,
+        0,
+        3,
+        &format!(
+            "Отчет по производству товаров за период: {} - {}",
+            date_one.format("%d.%m.%Y"),
+            date_two.format("%d.%m.%Y")
+        ),
+        &Format::new()
+            .set_bold()
+            .set_align(FormatAlign::Center)
+            .set_border(FormatBorder::Thin),
+    );
+    // Высота
+    let _ = worksheet.set_row_height(0, 30);
+    let _ = worksheet.set_row_height(1, 20);
+
+    let mut i = 0;
+    ["#", "Продукт", "Ед.измерения", "Кол-во"].map(|title| {
+        let _ = worksheet.write_with_format(
+            1,
+            i,
+            title,
+            &Format::new()
+                .set_bold()
+                .set_align(FormatAlign::Center)
+                .set_background_color(Color::RGB(0xC6C6C6))
+                .set_border(FormatBorder::Thin),
+        );
+        i += 1
+    });
+
+    let mut i = 2;
+    items.iter().for_each(|item| {
+        let _ = worksheet.write_with_format(i, 0, item.id, &right_fmt);
+        let _ = worksheet.write_with_format(i, 1, item.name.clone(), &right_fmt);
+        let _ = worksheet.write_with_format(i, 2, item.measure.clone(), &right_fmt);
+        let _ = worksheet.write_with_format(
+            i,
+            3,
+            item.cnt,
+            &Format::new().set_border(FormatBorder::Thin),
+        );
+
+        i += 1;
+    });
+
+    // Итоги
+    let _ = worksheet.write_with_format(i, 3, Formula::new(format!("=SUM(D3:D{})", i)), &bold_fmt);
+
+    // Merge cells
+    let _ = worksheet.merge_range(
+        i,
+        0,
+        i,
+        2,
+        "Всего произведено товаров",
+        &Format::new()
+            .set_bold()
+            .set_align(FormatAlign::Center)
+            .set_border(FormatBorder::Thin),
+    );
+
+    let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
+    let _ = wookbook.save(tmpfile.path());
+
+    tmpfile.seek(SeekFrom::Start(0)).unwrap();
+
+    Ok(tmpfile)
 }

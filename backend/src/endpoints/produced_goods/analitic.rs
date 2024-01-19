@@ -17,3 +17,16 @@ pub async fn get_analitics(
 
     Ok(Json(items))
 }
+
+pub async fn upload_report_in_excel(
+    State(pool): State<PgPool>,
+    Extension(current_user): Extension<CurrentUser>,
+    Query(q): Query<Q>,
+) -> Result<(), AppError> {
+    // Метод получения списка единиц измерения
+
+    let items = serv::get_analitics(State(pool), Extension(current_user), Query(q.clone())).await?;
+    serv::generate_excel(items, q.date_one, q.date_two).await?;
+
+    Ok(())
+}
