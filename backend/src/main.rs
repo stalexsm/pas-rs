@@ -41,10 +41,10 @@ async fn main() {
 
     // Ведение журнала
     tracing_subscriber::fmt().init();
+    dotenv::dotenv().ok();
 
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgresql://postgres:postgres@95.163.237.35:54320/postgres".to_string()
-    });
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgresql://postgres:postgres@127.0.0.1:54320/postgres".to_string());
 
     let pool = PgPoolOptions::new()
         .max_connections(20)
