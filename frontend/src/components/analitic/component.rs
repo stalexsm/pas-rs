@@ -172,9 +172,110 @@ pub fn analitic() -> Html {
         })
     };
 
+    let download_report = {
+        let cloned_date_one = *date_one;
+        let cloned_date_two = *date_two;
+        let cloned_product = (*product).clone();
+        let cloned_user = (*user).clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+
+            let cloned_product = cloned_product.clone();
+            let cloned_user = cloned_user.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let mut header_bearer = String::from("Bearer ");
+                let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+                if let Some(t) = token.clone() {
+                    header_bearer.push_str(&t);
+                }
+
+                let _1 = cloned_date_one.to_string();
+                let _2 = cloned_date_two.to_string();
+                let mut q = vec![("date_one", _1.as_str()), ("date_two", _2.as_str())];
+
+                if let Some(product) = &cloned_product {
+                    q.push(("product", &product));
+                }
+
+                if let Some(user) = &cloned_user {
+                    q.push(("user", user));
+                }
+
+                let resp = http::Request::post("/api/upload-report")
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", &header_bearer)
+                    .query(q)
+                    .send()
+                    .await
+                    .unwrap();
+
+                let headers = resp.headers();
+                if let Some(disposition) = headers.get("Content-Disposition") {
+                    // Ищем имя файла в Content-Disposition.
+                    if let Some(filename) = disposition
+                        .split(';')
+                        .find(|part| part.trim_start().starts_with("filename="))
+                    {
+                        // Обычно, имя файла начинается после "filename=" и может быть в кавычках.
+                        let filename = filename
+                            .split('=')
+                            .nth(1) // Получаем значение после '='.
+                            .map(|s| s.trim()) // Удаляем пробелы по краям.
+                            .map(|s| s.trim_matches('"')) // Удаляем кавычки, если они есть.
+                            .unwrap_or("");
+
+                        let bytes = resp.binary().await.unwrap();
+
+                        let u8_array = js_sys::Uint8Array::from(&bytes[..]);
+                        let array = js_sys::Array::new_with_length(1);
+                        array.set(0, u8_array.into());
+
+                        let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
+                            &array,
+                            web_sys::BlobPropertyBag::new().type_("application/octet-stream"),
+                        )
+                        .unwrap();
+                        let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
+                        let document = web_sys::window().unwrap().document().unwrap();
+
+                        let a = document.create_element("a").unwrap();
+                        let a = a.dyn_into::<web_sys::HtmlAnchorElement>().unwrap();
+
+                        // Устанавливаем href для элемента <a> как созданную URL для `Blob`
+                        a.set_href(&url);
+                        // Задаем атрибут `download` с желаемым именем файла
+                        a.set_download(filename); // Или другой желаемый формат и имя файла
+                                                  // Программно "кликаем" по элементу <a>, чтобы начать скачивание
+                        a.click();
+                        // Удаляем созданную URL, чтобы освободить ресурсы
+                        web_sys::Url::revoke_object_url(&url).unwrap();
+                    }
+                }
+            });
+        })
+    };
+
     html! {
         <>
         <HeaderComponent />
+        <div class="flex justify-end">
+            <button
+                onclick={download_report}
+                class="
+                    min-w-[151px]
+                    px-4
+                    py-2
+                    bg-blue-500
+                    text-white
+                    rounded-md
+                    hover:bg-blue-700
+                    mt-2
+                    mx-5
+                "
+            >
+                {"Скачать отчет"}
+            </button>
+        </div>
         <div
             class="
                 xs:grid
