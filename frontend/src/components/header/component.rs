@@ -175,7 +175,7 @@ pub fn header() -> Html {
                     </div>
                     <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                         <div style="min-width: 40px;" class="flex flex-shrink-0 items-center">
-                            <img class="h-8 w-auto" src="./assets/img/logo.svg" alt="PAS"/>
+                            <img class="h-8 w-auto" src="./assets/img/logo.png" alt="PAS"/>
                         </div>
                         <div class="hidden sm:ml-6 sm:block">
                             <div class="flex space-x-4">
