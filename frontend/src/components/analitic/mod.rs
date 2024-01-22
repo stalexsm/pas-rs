@@ -8,5 +8,6 @@ pub struct Analitic {
     pub id: i64,
     pub name: String,
     pub measure: String,
+    pub fio: String,
     pub cnt: i64,
 }

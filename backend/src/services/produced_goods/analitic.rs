@@ -15,6 +15,7 @@ pub struct Item {
     pub id: i64,
     pub name: String,
     pub measure: String,
+    pub fio: String,
     pub cnt: i64,
 }
 
@@ -43,40 +44,45 @@ pub async fn get_analitics(
     } else {
         let mut where_additation = String::new();
         if let Some(product) = q.product {
-            where_additation.push_str(&format!(" and products.name ilike '%{}%'", product));
+            where_additation.push_str(&format!(" and p.name ilike '%{}%'", product));
         }
 
         if let Some(user) = q.user {
-            where_additation.push_str(&format!(" and users.fio ilike '%{}%'", user));
+            where_additation.push_str(&format!(" and u.fio ilike '%{}%'", user));
         }
 
         let rows = sqlx::query(&format!(
-            r#"SELECT
-                  products.id as id,
-                  products.name as name,
-                  measure_units.name as measure,
-                  SUM(pg.cnt + COALESCE(pa.adjustment_cnt::bigint, 0))::bigint AS cnt
+            r#"select
+              p.id as id,
+              p.name as name,
+              mu.name as measure,
+              u.fio as fio,
+              SUM(pg.cnt + COALESCE(pa.adjustment_cnt::bigint, 0))::bigint AS cnt
+
+            from
+              products as p
+              join measure_units as mu on mu.id = p.measure_unit_id
+              join produced_goods as pg on p.id = pg.product_id
+              join users as u on u.id = pg.user_id
+              left join (
+                SELECT
+                  produced_good_id,
+                  SUM(cnt::bigint) AS adjustment_cnt
                 FROM
-                  produced_goods pg
-                  LEFT JOIN (
-                    SELECT
-                      produced_good_id,
-                      SUM(cnt::integer) AS adjustment_cnt
-                    FROM
-                      produced_good_adjustments
-                    GROUP BY
-                      produced_good_id
-                  ) pa ON pa.produced_good_id = pg.id
-                  LEFT JOIN products on products.id = pg.product_id
-                  LEFT JOIN measure_units on measure_units.id = products.measure_unit_id
-                  LEFT JOIN users on users.id = pg.user_id
-                WHERE pg.created_at::date BETWEEN $1 AND $2
-                {}
+                  produced_good_adjustments
                 GROUP BY
-                  products.id,
-                  products.name,
-                  measure_units.name
-                ORDER BY cnt DESC;"#,
+                  produced_good_id
+              ) pa ON pa.produced_good_id = pg.id
+            where
+              pg.created_at::date between $1 and $2
+              {}
+            group by
+              p.id,
+              u.fio,
+              measure
+            order by
+              cnt desc,
+              p.id desc;"#,
             where_additation
         ))
         .bind(q.date_one)
@@ -85,7 +91,8 @@ pub async fn get_analitics(
             id: row.get(0),
             name: row.get(1),
             measure: row.get(2),
-            cnt: row.get(3),
+            fio: row.get(3),
+            cnt: row.get(4),
         })
         .fetch_all(&pool)
         .await?;
@@ -113,14 +120,15 @@ pub async fn generate_excel(
     // Set the column weight
     worksheet.set_column_width(0, 8)?;
     worksheet.set_column_width(1, 25)?;
-    worksheet.set_column_width(2, 15)?;
-    worksheet.set_column_width(3, 25)?;
+    worksheet.set_column_width(2, 25)?;
+    worksheet.set_column_width(3, 15)?;
+    worksheet.set_column_width(4, 25)?;
 
     let _ = worksheet.merge_range(
         0,
         0,
         0,
-        3,
+        4,
         &format!(
             "Отчет по производству товаров за период: {} - {}",
             date_one.format("%d.%m.%Y"),
@@ -136,7 +144,7 @@ pub async fn generate_excel(
     let _ = worksheet.set_row_height(1, 20);
 
     let mut i = 0;
-    ["#", "Продукт", "Ед.измерения", "Кол-во"].map(|title| {
+    ["#", "Продукт", "Пользователь", "Ед.измерения", "Кол-во"].map(|title| {
         let _ = worksheet.write_with_format(
             1,
             i,
@@ -154,10 +162,11 @@ pub async fn generate_excel(
     items.iter().for_each(|item| {
         let _ = worksheet.write_with_format(i, 0, item.id, &right_fmt);
         let _ = worksheet.write_with_format(i, 1, item.name.clone(), &right_fmt);
-        let _ = worksheet.write_with_format(i, 2, item.measure.clone(), &right_fmt);
+        let _ = worksheet.write_with_format(i, 2, item.fio.clone(), &right_fmt);
+        let _ = worksheet.write_with_format(i, 3, item.measure.clone(), &right_fmt);
         let _ = worksheet.write_with_format(
             i,
-            3,
+            4,
             item.cnt,
             &Format::new().set_border(FormatBorder::Thin),
         );
@@ -166,7 +175,7 @@ pub async fn generate_excel(
     });
 
     // Итоги
-    let _ = worksheet.write_with_format(i, 3, Formula::new(format!("=SUM(D3:D{})", i)), &bold_fmt);
+    let _ = worksheet.write_with_format(i, 4, Formula::new(format!("=SUM(E3:E{})", i)), &bold_fmt);
 
     // Merge cells
     let _ = worksheet.merge_range(

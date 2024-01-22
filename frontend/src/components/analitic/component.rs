@@ -387,6 +387,7 @@ pub fn analitic() -> Html {
                     <tr>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Продукт"}</th>
+                    <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Пользователь"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Eдиница Измерения"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Кол-во"}</th>
                     // <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase"></th>
