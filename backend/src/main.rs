@@ -12,8 +12,8 @@ use backend::{
         produced_goods::{
             analitic::{get_analitics, upload_report_in_excel},
             produced_good::{
-                add_adj_produced_goods, create_produced_good, detail_produced_good,
-                edit_produced_good, get_produced_goods,
+                add_adj_produced_goods, create_produced_good, delete_produced_good,
+                detail_produced_good, edit_produced_good, get_produced_goods,
             },
         },
         rbs::{
@@ -80,7 +80,9 @@ async fn main() {
         )
         .route(
             "/produced-goods/:id",
-            get(detail_produced_good).patch(edit_produced_good),
+            get(detail_produced_good)
+                .patch(edit_produced_good)
+                .delete(delete_produced_good),
         )
         .route("/produced-goods/:id/adj", post(add_adj_produced_goods))
         .route("/analitics", get(get_analitics))

@@ -8,7 +8,10 @@ use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
     components::{
-        elements::paginate::{Paginate, Q},
+        elements::{
+            modal::ModalDelete,
+            paginate::{Paginate, Q},
+        },
         footer::Footer,
         header::component::HeaderComponent,
         home::{list::ProducedGoodList, modal::Modal, ProducedGood},
@@ -40,6 +43,7 @@ pub fn home() -> Html {
     let rendered = use_state_eq(|| false);
 
     let is_visible = use_state_eq(|| false);
+    let is_visible_del = use_state_eq(|| false);
     let is_adj = use_state_eq(|| false);
 
     let item: UseStateHandle<Option<ProducedGood>> = use_state_eq(|| None);
@@ -224,6 +228,69 @@ pub fn home() -> Html {
         })
     };
 
+    let cloned_is_visible_del = is_visible_del.clone();
+    let toggle_modal_del = {
+        let cloned_item = item.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+
+            cloned_is_visible_del.set(!*cloned_is_visible_del);
+            cloned_item.set(None); //Сбросим state для Item редактирование
+        })
+    };
+
+    let on_delete_modal = {
+        let cloned_item = item.clone();
+        let cloned_is_visible_del = is_visible_del.clone();
+        Callback::from(move |item: ProducedGood| {
+            cloned_item.set(Some(item));
+            // Toggle modal
+            cloned_is_visible_del.set(!*cloned_is_visible_del);
+        })
+    };
+
+    let on_delete = {
+        // todo
+        let cloned_is_visible_del = is_visible_del.clone();
+        let cloned_item = item.clone();
+        let cloned_rendered = rendered.clone();
+        let navigator = use_navigator();
+        Callback::from(move |_| {
+            let mut header_bearer = String::from("Bearer ");
+            let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+            if let Some(t) = token.clone() {
+                header_bearer.push_str(&t);
+            }
+
+            let cloned_is_visible_del = cloned_is_visible_del.clone();
+            let cloned_item = cloned_item.clone();
+            let cloned_rendered = cloned_rendered.clone();
+            let navigator = navigator.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let path = "/api/produced-goods";
+
+                if let Some(item) = (*cloned_item).clone() {
+                    let _: ResponseMsg = http::Request::delete(&format!("{}/{}", path, item.id))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", &header_bearer)
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+                }
+
+                cloned_is_visible_del.set(!*cloned_is_visible_del);
+                cloned_rendered.set(true); // для перерисовки списка после действий.
+
+                if let Some(navigator) = navigator {
+                    navigator.push(&Route::Home);
+                }
+            });
+        })
+    };
+
     html! {
         <>
         <HeaderComponent />
@@ -254,6 +321,7 @@ pub fn home() -> Html {
                         current_user={current_user}
                         {on_edit}
                         {on_add_adj}
+                        on_delete={on_delete_modal}
                     />
                 </tbody>
             </table>
@@ -268,6 +336,12 @@ pub fn home() -> Html {
                 per_page={PER_PAGE}
             />
         }
+
+        <ModalDelete
+            is_visible={*is_visible_del}
+            toggle={toggle_modal_del}
+            {on_delete}
+        />
 
         <Modal
             is_visible={*is_visible}

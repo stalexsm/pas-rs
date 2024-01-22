@@ -65,6 +65,32 @@ pub async fn edit_produced_good(
     }
 }
 
+pub async fn delete_produced_good(
+    State(pool): State<PgPool>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> Result<(), AppError> {
+    // Бизнес логика удаления производства
+
+    if !check_is_admin(current_user.role) {
+        Err(AppError(
+            StatusCode::FORBIDDEN,
+            anyhow::anyhow!("У вас нет доступа для данного действия!"),
+        ))
+    } else {
+        let _ = sqlx::query(
+            "delete
+        from produced_goods
+        where id = $1;",
+        )
+        .bind(id)
+        .execute(&pool)
+        .await?;
+
+        Ok(())
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Q {
     #[serde(default = "page")]

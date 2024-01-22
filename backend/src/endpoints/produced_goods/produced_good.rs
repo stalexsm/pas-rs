@@ -63,6 +63,21 @@ pub async fn detail_produced_good(
     Ok(Json(item))
 }
 
+pub async fn delete_produced_good(
+    State(pool): State<PgPool>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> Result<Json<HashMap<String, String>>, AppError> {
+    // Метод удаления производства
+
+    serv::delete_produced_good(State(pool), Extension(current_user), Path(id)).await?;
+
+    Ok(Json(HashMap::from([(
+        "detail".to_string(),
+        "OK".to_string(),
+    )])))
+}
+
 pub async fn add_adj_produced_goods(
     State(pool): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
