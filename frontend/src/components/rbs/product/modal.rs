@@ -1,7 +1,9 @@
 use super::Product;
 use crate::{components::rbs::measure::MeasureUnit, ResponseItems};
-use gloo::storage::{LocalStorage, Storage};
-use gloo_net::http;
+use gloo::{
+    net::http,
+    storage::{LocalStorage, Storage},
+};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;

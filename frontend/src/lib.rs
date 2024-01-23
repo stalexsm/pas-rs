@@ -1,6 +1,7 @@
 use core::fmt;
+use std::str::FromStr;
 
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize};
 use yew::{Reducible, UseReducerHandle};
 use yew_router::prelude::*;
 
@@ -108,3 +109,16 @@ impl Reducible for AppStateContext {
 }
 
 pub type AppContext = UseReducerHandle<AppStateContext>;
+
+fn _empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let opt = Option::<String>::deserialize(de)?;
+    match opt.as_deref() {
+        None | Some("") => Ok(None),
+        Some(s) => FromStr::from_str(s).map_err(de::Error::custom).map(Some),
+    }
+}

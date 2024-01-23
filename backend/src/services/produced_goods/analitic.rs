@@ -48,7 +48,19 @@ pub async fn get_analitics(
         }
 
         if let Some(user) = q.user {
-            where_additation.push_str(&format!(" and u.fio ilike '%{}%'", user));
+            if !user.is_empty() {
+                // Convert
+                let ids = user
+                    .split(';')
+                    .filter(|s| !s.is_empty())
+                    .filter_map(|s| s.parse::<i64>().ok())
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",");
+
+                where_additation.push_str(&format!(" and u.id in ({})", ids));
+                // todo пересмотреть
+            }
         }
 
         let rows = sqlx::query(&format!(

@@ -1,13 +1,17 @@
 use crate::{
     components::{
         analitic::{list::AnaliticList, Analitic},
+        elements::multiselect::{Item, MultiSelect},
         footer::Footer,
         header::component::HeaderComponent,
     },
-    AppContext, Route, User,
+    AppContext, ResponseItems, Route, User,
 };
-use gloo::storage::{LocalStorage, Storage};
-use gloo_net::http;
+use gloo::{
+    net::http,
+    storage::{LocalStorage, Storage},
+};
+
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlSelectElement;
@@ -55,14 +59,45 @@ pub fn analitic() -> Html {
     let product = use_state_eq(|| location.query::<Q>().map(|it| it.product).unwrap_or(None));
     let user = use_state_eq(|| location.query::<Q>().map(|it| it.user).unwrap_or(None));
 
+    // Для списка в selected
+    let users: UseStateHandle<Vec<User>> = use_state_eq(Vec::new);
+    {
+        let users = users.clone();
+        use_effect_with((), move |_| {
+            let users = users.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let mut header_bearer = String::from("Bearer ");
+                let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+                if let Some(t) = token.clone() {
+                    header_bearer.push_str(&t);
+                }
+
+                let response = http::Request::get("/api/users") // todo helpers
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", &header_bearer)
+                    .query([("page", "1"), ("per_page", "10000")])
+                    .send()
+                    .await
+                    .unwrap()
+                    .json::<ResponseItems<User>>()
+                    .await
+                    .unwrap();
+
+                users.set(response.items.clone());
+            });
+        });
+    }
+
     let items: UseStateHandle<Vec<Analitic>> = use_state_eq(Vec::new);
     {
         let items = items.clone();
+        let users = users.clone();
         let navigator = use_navigator();
         use_effect_with(
             (*date_one, *date_two, (*product).clone(), (*user).clone()),
             move |(date_one, date_two, product, user)| {
                 let items = items.clone();
+                let users = users.clone();
                 let cloned_date_one = *date_one;
                 let cloned_date_two = *date_two;
                 let cloned_product = (*product).clone();
@@ -73,6 +108,20 @@ pub fn analitic() -> Html {
                     if let Some(t) = token.clone() {
                         header_bearer.push_str(&t);
                     }
+
+                    let response =
+                        http::Request::get("/api/users") // todo helpers
+                            .header("Content-Type", "application/json")
+                            .header("Authorization", &header_bearer)
+                            .query([("page", "1"), ("per_page", "10000")])
+                            .send()
+                            .await
+                            .unwrap()
+                            .json::<ResponseItems<User>>()
+                            .await
+                            .unwrap();
+
+                    users.set(response.items.clone());
 
                     let _1 = cloned_date_one.to_string();
                     let _2 = cloned_date_two.to_string();
@@ -161,14 +210,10 @@ pub fn analitic() -> Html {
 
     let onchange_user = {
         let cloned_user = user.clone();
-        Callback::from(move |event: Event| {
-            let value = event
-                .target()
-                .unwrap()
-                .unchecked_into::<HtmlSelectElement>()
-                .value();
+        Callback::from(move |users: Vec<String>| {
+            let flt_user = users.join(";");
 
-            cloned_user.set(Some(value));
+            cloned_user.set(Some(flt_user.clone()));
         })
     };
 
@@ -311,29 +356,43 @@ pub fn analitic() -> Html {
                 placeholder="Фильтр по товару"
                 value={(*product).clone()}
             />
-            <input
-                type="text"
+            <MultiSelect
                 onchange={onchange_user}
-                class="
-                    w-[calc((100vw - 2.5rem - 15px) / 2)]
-                    px-4
-                    py-2
-                    text-gray-600
-                    text-gray
-                    rounded-md
-                    font-normal
-                    text-sm
-                    rounded
-                    border
-                    border-gray-300
-                    focus:border-gray-700
-                    focus:border-indigo-700
-                    focus:border
-                    focus:outline-none
-                "
-                placeholder="Фильтр по пользователю"
-                value={(*user).clone()}
+                selected={
+                    match (*user).clone() {
+                        Some(u) => {
+                            u.split(';').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect()
+                        },
+                        _ => Vec::new()
+                        }
+                }
+                items={
+                    (*users).iter().map(|u| Item {id: u.id, name: u.fio.as_ref().map_or(u.email.clone(), |fio| fio.clone())}).collect::<Vec<Item>>()
+                }
             />
+            // <input
+            //     type="text"
+            //     onchange={onchange_user}
+            //     class="
+            //         w-[calc((100vw - 2.5rem - 15px) / 2)]
+            //         px-4
+            //         py-2
+            //         text-gray-600
+            //         text-gray
+            //         rounded-md
+            //         font-normal
+            //         text-sm
+            //         rounded
+            //         border
+            //         border-gray-300
+            //         focus:border-gray-700
+            //         focus:border-indigo-700
+            //         focus:border
+            //         focus:outline-none
+            //     "
+            //     placeholder="Фильтр по пользователю"
+            //     value={(*user).clone()}
+            // />
 
             <input
                 type="date"

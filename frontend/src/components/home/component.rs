@@ -1,7 +1,9 @@
 use std::ops::Deref;
 
-use gloo::storage::{LocalStorage, Storage};
-use gloo_net::http;
+use gloo::{
+    net::http,
+    storage::{LocalStorage, Storage},
+};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};

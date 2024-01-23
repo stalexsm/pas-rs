@@ -10,8 +10,10 @@ use frontend::{
     },
     AppContext, AppStateContext, Route, User,
 };
-use gloo::storage::{LocalStorage, Storage};
-use gloo_net::http;
+use gloo::{
+    net::http,
+    storage::{LocalStorage, Storage},
+};
 use log::debug;
 use yew::prelude::*;
 use yew_router::prelude::*;
