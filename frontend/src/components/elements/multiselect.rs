@@ -169,6 +169,7 @@ pub fn multiselect(
                                                                 "leading-6",
                                                                 "w-full",
                                                                 "truncate",
+                                                                "text-gray-600",
                                                             )
                                                         }
                                                     >
