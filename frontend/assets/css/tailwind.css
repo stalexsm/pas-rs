@@ -1155,6 +1155,10 @@ video {
   place-items: center;
 }
 
+.content-center {
+  align-content: center;
+}
+
 .items-start {
   align-items: flex-start;
 }
@@ -1191,6 +1195,10 @@ video {
   justify-items: end;
 }
 
+.justify-items-center {
+  justify-items: center;
+}
+
 .justify-items-stretch {
   justify-items: stretch;
 }
@@ -1219,6 +1227,11 @@ video {
 .gap-x-6 {
   -moz-column-gap: 1.5rem;
        column-gap: 1.5rem;
+}
+
+.gap-x-\[1px\] {
+  -moz-column-gap: 1px;
+       column-gap: 1px;
 }
 
 .-space-x-px > :not([hidden]) ~ :not([hidden]) {

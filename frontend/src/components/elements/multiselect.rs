@@ -49,21 +49,26 @@ pub fn multiselect(
                 <div class="flex flex-col items-center relative">
                     <div class="w-full">
                         <div class="p-1 flex border border-gray-300 bg-white rounded">
-                            <div class="flex flex-auto flex-wrap">
-                                <div class="
-                                    flex
-                                    justify-center
-                                    items-center
-                                    py-1
-                                    px-2
-                                    bg-white
-                                    text-gray-400
-                                    text-gray
-                                    rounded-md
-                                    font-normal
-                                    text-sm"
+                            <div class="grid gap-x-[1px] w-full content-center">
+                                <div class={
+                                    classes!(
+                                        "py-1",
+                                        "px-2",
+                                        "truncate",
+                                        "bg-white",
+                                        "text-gray",
+                                        "rounded-md",
+                                        "font-normal",
+                                        "text-sm",
+                                        if !(*selected_opts).is_empty()  {"text-gray-600"} else {"text-gray-400"},
+                                    )
+                                }
                                 >
-                                    {format!("Выбрано: {} эл.", (*selected_opts).len())}
+                                    if  !(*selected_opts).is_empty() {
+                                       { format!("Выбрано: {} элементов", (*selected_opts).len())}
+                                    } else {
+                                        {"Фильтр по пользователю"}
+                                    }
                                 </div>
                             </div>
                             <div class="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200">
@@ -163,7 +168,6 @@ pub fn multiselect(
                                                                 "mx-2",
                                                                 "leading-6",
                                                                 "w-full",
-                                                                "text-ellipsis",
                                                                 "truncate",
                                                             )
                                                         }
