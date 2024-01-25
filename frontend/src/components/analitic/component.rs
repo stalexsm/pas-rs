@@ -156,8 +156,8 @@ pub fn analitic() -> Html {
                                     date_one: cloned_date_one,
                                     date_two: cloned_date_two,
 
-                                    product: cloned_product,
-                                    user: cloned_user,
+                                    product: cloned_product.filter(|u| !u.is_empty()),
+                                    user: cloned_user.filter(|u| !u.is_empty()),
                                 },
                             )
                             .unwrap();
