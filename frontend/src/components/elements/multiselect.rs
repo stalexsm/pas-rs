@@ -153,16 +153,32 @@ pub fn multiselect(
                                         <div class="cursor-pointer w-full border-gray-100 rounded-t border-b hover:bg-blue-100">
                                             <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative hover:border-blue-100">
                                                 <div class="w-full items-center flex">
-                                                    <div {onclick} value={item.id.to_string()} class="text-xs mx-2 leading-6 w-full text-ellipsis truncate">{item.name.clone()}</div>
+                                                    <div
+                                                        {onclick}
+                                                        value={item.id.to_string()}
+                                                        class={
+                                                            classes!(
+                                                                "text-sm",
+                                                                "font-normal",
+                                                                "mx-2",
+                                                                "leading-6",
+                                                                "w-full",
+                                                                "text-ellipsis",
+                                                                "truncate",
+                                                            )
+                                                        }
+                                                    >
+                                                        {item.name.clone()}
+                                                    </div>
                                                     if (*selected_opts).contains(&item_string) {
                                                         <span class="mr-5">
                                                             <svg
                                                                 xmlns="http://www.w3.org/2000/svg"
                                                                 fill="none"
                                                                 viewBox="0 0 24 24"
-                                                                stroke-width="1.5"
+                                                                stroke-width="2"
                                                                 stroke="currentColor"
-                                                                class="w-4 h-4"
+                                                                class="w-4 h-4 stroke-blue-500"
                                                             >
                                                                 <path
                                                                     stroke-linecap="round"

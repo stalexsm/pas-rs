@@ -1569,6 +1569,18 @@ video {
   fill: currentColor;
 }
 
+.stroke-blue-500 {
+  stroke: #3b82f6;
+}
+
+.stroke-1 {
+  stroke-width: 1;
+}
+
+.stroke-2 {
+  stroke-width: 2;
+}
+
 .\!p-0 {
   padding: 0px !important;
 }
