@@ -44,7 +44,7 @@ pub fn multiselect(
     }
 
     html! {
-        <div class="flex flex-col min-w-[190px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
+        <div class="flex flex-col sm:min-w-[190px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
             <div class="w-full"> // px-4
                 <div class="flex flex-col items-center relative">
                     <div class="w-full">
@@ -63,7 +63,7 @@ pub fn multiselect(
                                     font-normal
                                     text-sm"
                                 >
-                                    {format!("Выбрано: {} элементов", (*selected_opts).len())}
+                                    {format!("Выбрано: {} эл.", (*selected_opts).len())}
                                 </div>
                             </div>
                             <div class="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200">

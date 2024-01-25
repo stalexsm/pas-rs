@@ -840,6 +840,13 @@ video {
   margin-top: auto;
 }
 
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
 .block {
   display: block;
 }
@@ -1006,10 +1013,6 @@ video {
 
 .min-w-\[151px\] {
   min-width: 151px;
-}
-
-.min-w-\[190px\] {
-  min-width: 190px;
 }
 
 .max-w-7xl {
@@ -1283,6 +1286,14 @@ video {
 
 .overflow-y-auto {
   overflow-y: auto;
+}
+
+.text-ellipsis {
+  text-overflow: ellipsis;
+}
+
+.text-clip {
+  text-overflow: clip;
 }
 
 .\!whitespace-nowrap {
@@ -2391,6 +2402,10 @@ video {
 
   .sm\:w-full {
     width: 100%;
+  }
+
+  .sm\:min-w-\[190px\] {
+    min-width: 190px;
   }
 
   .sm\:max-w-lg {
