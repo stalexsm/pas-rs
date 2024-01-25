@@ -153,7 +153,7 @@ pub fn multiselect(
                                         <div class="cursor-pointer w-full border-gray-100 rounded-t border-b hover:bg-blue-100">
                                             <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative hover:border-blue-100">
                                                 <div class="w-full items-center flex">
-                                                    <div {onclick} value={item.id.to_string()} class="mx-2 leading-6 w-full">{item.name.clone()}</div>
+                                                    <div {onclick} value={item.id.to_string()} class="text-xs mx-2 leading-6 w-full text-ellipsis truncate">{item.name.clone()}</div>
                                                     if (*selected_opts).contains(&item_string) {
                                                         <span class="mr-5">
                                                             <svg
