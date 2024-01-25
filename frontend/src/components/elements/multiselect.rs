@@ -14,6 +14,7 @@ pub struct Props {
     pub onchange: Callback<Vec<String>>,
     pub selected: Vec<String>,
     pub items: Vec<Item>,
+    pub placeholder: String,
 }
 
 #[function_component(MultiSelect)]
@@ -22,6 +23,7 @@ pub fn multiselect(
         onchange,
         selected,
         items,
+        placeholder,
     }: &Props,
 ) -> Html {
     // Обработка компонента Multi Select
@@ -67,7 +69,7 @@ pub fn multiselect(
                                     if  !(*selected_opts).is_empty() {
                                        { format!("Выбрано: {} элементов", (*selected_opts).len())}
                                     } else {
-                                        {"Фильтр по пользователю"}
+                                        {placeholder}
                                     }
                                 </div>
                             </div>

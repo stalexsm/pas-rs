@@ -353,10 +353,11 @@ pub fn analitic() -> Html {
                     focus:border
                     focus:outline-none
                 "
-                placeholder="Фильтр по товару"
+                placeholder="По товару"
                 value={(*product).clone()}
             />
             <MultiSelect
+                placeholder={"По пользователю"}
                 onchange={onchange_user}
                 selected={
                     match (*user).clone() {
