@@ -9,7 +9,7 @@ resolver = "2"
 [workspace.package]
 # name = "pas"
 description = "Система учета производства (Production Accounting System)"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Alexandr Starovoitov <stalex.info@yandex.ru>"]
 
