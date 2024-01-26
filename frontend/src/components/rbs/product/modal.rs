@@ -133,7 +133,7 @@ pub fn modal(props: &Props) -> Html {
                                     placeholder="Введите наименование"
                                     value={(*name).clone()}
                                 />
-                                <label for="measure" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Продукт"}</label>
+                                <label for="measure" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Ед. измерения"}</label>
                                 <select
                                     onchange={onchange_measure}
                                     id="measure"
