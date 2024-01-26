@@ -192,7 +192,7 @@ pub async fn get_users(
 ) -> Result<Items<Item>, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -236,7 +236,7 @@ pub async fn detail_user(
 ) -> Result<Item, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
