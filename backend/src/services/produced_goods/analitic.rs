@@ -7,7 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::{check_is_admin, empty_string_as_none, AppError, CurrentUser};
+use crate::{check_access, empty_string_as_none, AppError, CurrentUser};
 use rust_xlsxwriter::*;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -36,7 +36,7 @@ pub async fn get_analitics(
 ) -> Result<Vec<Item>, AppError> {
     // Бизнес логика получения продуктв
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::NOT_FOUND,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

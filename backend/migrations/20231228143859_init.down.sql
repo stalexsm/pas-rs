@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS produced_good_adjustments cascade;
 DROP TABLE IF EXISTS produced_goods cascade;
 
 DROP TABLE IF EXISTS sessions cascade;
+DROP TABLE IF EXISTS organizations cascade;
 DROP TABLE IF EXISTS users cascade;
 
 DROP TABLE IF EXISTS products cascade;

@@ -1,3 +1,4 @@
+use crate::{check_access, check_is_admin, services::Items, AppError, CurrentUser, Role};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -6,8 +7,6 @@ use axum::{
 use bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-
-use crate::{check_is_admin, services::Items, AppError, CurrentUser, Role};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -31,7 +30,7 @@ pub async fn create_user(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания пользователя
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -43,16 +42,33 @@ pub async fn create_user(
         }
 
         let hash_passwd = bcrypt::hash("password", bcrypt::DEFAULT_COST)?;
+
+        let organization_id = if check_is_admin(current_user.role) {
+            body.organization_id
+        } else {
+            current_user.organization_id
+        };
+
+        if matches!(Role::from(body.role.clone()), Role::Director | Role::User)
+            && organization_id.is_none()
+        {
+            return Err(AppError(
+                StatusCode::BAD_REQUEST,
+                anyhow::anyhow!("Невозможно создать запись без организации!"),
+            ));
+        }
+
         let row: (i64,) = sqlx::query_as(
             "insert
-            into users (role, email, fio, passwd, blocked) values
-            ($1, $2, $3, $4, $5) returning id",
+            into users (role, email, fio, passwd, blocked, organization_id) values
+            ($1, $2, $3, $4, $5, $6) returning id",
         )
         .bind(body.role)
         .bind(body.email)
         .bind(body.fio)
         .bind(hash_passwd)
         .bind(body_blocked)
+        .bind(organization_id)
         .fetch_one(&pool)
         .await?;
 
@@ -68,7 +84,7 @@ pub async fn edit_user(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования пользователя
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -79,14 +95,30 @@ pub async fn edit_user(
             body_blocked = _blocked;
         }
 
+        let organization_id = if check_is_admin(current_user.role) {
+            body.organization_id
+        } else {
+            current_user.organization_id
+        };
+
+        if matches!(Role::from(body.role.clone()), Role::Director | Role::User)
+            && organization_id.is_none()
+        {
+            return Err(AppError(
+                StatusCode::BAD_REQUEST,
+                anyhow::anyhow!("Невозможно отредактировать запись без организации!"),
+            ));
+        }
+
         let _ = sqlx::query(
             "update users
-            set role=$1, fio=$2, blocked=$3, updated_at=NOW()
-            where id = $4",
+            set role=$1, fio=$2, blocked=$3, organization_id=$4, updated_at=NOW()
+            where id = $5",
         )
         .bind(body.role)
         .bind(body.fio)
         .bind(body_blocked)
+        .bind(organization_id)
         .bind(id)
         .execute(&pool)
         .await?;
@@ -144,6 +176,7 @@ fn page() -> i64 {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
+    pub organization_id: Option<i64>,
     pub role: Role,
     pub email: String,
     pub fio: Option<String>,
@@ -169,6 +202,7 @@ pub async fn get_users(
             Item,
             "select
             id,
+            organization_id,
             role,
             email,
             fio,
@@ -212,6 +246,7 @@ pub async fn detail_user(
             Item,
             "select
             id,
+            organization_id,
             role,
             email,
             fio,
@@ -244,6 +279,7 @@ pub async fn current_user(
         Item,
         "select
         id,
+        organization_id,
         role,
         email,
         fio,

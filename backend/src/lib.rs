@@ -73,9 +73,16 @@ pub fn check_is_admin(role: Role) -> bool {
     matches!(role, Role::Developer | Role::Admin)
 }
 
+pub fn check_access(role: Role) -> bool {
+    // Вспомогательная функция для проверки доступа к функционалу
+
+    check_is_admin(role) || role == Role::Director
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CurrentUser {
     pub id: i64,
+    pub organization_id: Option<i64>,
     pub role: Role,
     pub email: String,
     pub fio: Option<String>,

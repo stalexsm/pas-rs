@@ -6,11 +6,12 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::{check_is_admin, services::Items, AppError, CurrentUser};
+use crate::{check_access, check_is_admin, services::Items, AppError, CurrentUser};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
     name: String,
+    organization_id: Option<i64>,
     measure_unit_id: i64,
 }
 
@@ -21,23 +22,38 @@ pub async fn create_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика создания продукта
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let row: (i64,) = sqlx::query_as(
-            "insert
-            into products (name, measure_unit_id) values
-            ($1, $2) returning id",
-        )
-        .bind(body.name)
-        .bind(body.measure_unit_id)
-        .fetch_one(&pool)
-        .await?;
+        let organization_id = if check_is_admin(current_user.role) {
+            body.organization_id
+        } else {
+            current_user.organization_id
+        };
 
-        Ok(row.0)
+        match organization_id {
+            Some(organization_id) => {
+                let row: (i64,) = sqlx::query_as(
+                    "insert
+                    into products (name, measure_unit_id, organization_id) values
+                    ($1, $2, $3) returning id",
+                )
+                .bind(body.name)
+                .bind(body.measure_unit_id)
+                .bind(organization_id)
+                .fetch_one(&pool)
+                .await?;
+
+                Ok(row.0)
+            }
+            _ => Err(AppError(
+                StatusCode::BAD_REQUEST,
+                anyhow::anyhow!("Невозможно создать запись без организации!"),
+            )),
+        }
     }
 }
 
@@ -49,24 +65,39 @@ pub async fn edit_product(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования продукта
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let _ = sqlx::query(
-            "update products
-            set name=$1, measure_unit_id=$2, updated_at=NOW()
-            where id = $3",
-        )
-        .bind(body.name)
-        .bind(body.measure_unit_id)
-        .bind(id)
-        .execute(&pool)
-        .await?;
+        let organization_id = if check_is_admin(current_user.role) {
+            body.organization_id
+        } else {
+            current_user.organization_id
+        };
 
-        Ok(id)
+        match organization_id {
+            Some(organization_id) => {
+                let _ = sqlx::query(
+                    "update products
+                    set name=$1, measure_unit_id=$2, organization_id=$3 updated_at=NOW()
+                    where id = $4",
+                )
+                .bind(body.name)
+                .bind(body.measure_unit_id)
+                .bind(organization_id)
+                .bind(id)
+                .execute(&pool)
+                .await?;
+
+                Ok(id)
+            }
+            _ => Err(AppError(
+                StatusCode::BAD_REQUEST,
+                anyhow::anyhow!("Невозможно отредактировать запись без организации!"),
+            )),
+        }
     }
 }
 
@@ -95,6 +126,7 @@ pub struct Select {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
+    pub organization_id: i64,
     pub name: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 
@@ -111,6 +143,7 @@ pub async fn get_products(
     let rows = sqlx::query(
         r#"select
             products.id,
+            products.organization_id,
             products.name,
             products.created_at,
             measure_units.id as "measure_unit_id",
@@ -124,11 +157,12 @@ pub async fn get_products(
     .bind(q.per_page)
     .map(|row: PgRow| Item {
         id: row.get(0),
-        name: row.get(1),
-        created_at: row.get(2),
+        organization_id: row.get(1),
+        name: row.get(2),
+        created_at: row.get(3),
         measure_unit: Select {
-            id: row.get(3),
-            name: row.get(4),
+            id: row.get(4),
+            name: row.get(5),
         },
     })
     .fetch_all(&pool)
@@ -152,7 +186,7 @@ pub async fn detail_product(
 ) -> Result<Item, AppError> {
     // Бизнес логика получения продуктв
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
@@ -161,6 +195,7 @@ pub async fn detail_product(
         let row = sqlx::query(
             r#"select
             products.id,
+            products.organization_id,
             products.name,
             products.created_at,
             measure_units.id as "measure_unit_id",
@@ -177,11 +212,12 @@ pub async fn detail_product(
             // Собираем в нужный вид
             Some(row) => Ok(Item {
                 id: row.get(0),
-                name: row.get(1),
-                created_at: row.get(2),
+                organization_id: row.get(1),
+                name: row.get(2),
+                created_at: row.get(3),
                 measure_unit: Select {
-                    id: row.get(3),
-                    name: row.get(4),
+                    id: row.get(4),
+                    name: row.get(5),
                 },
             }),
             None => Err(AppError(
@@ -199,7 +235,7 @@ pub async fn delete_product(
 ) -> Result<(), AppError> {
     // Бизнес логика удаления продуктв
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),

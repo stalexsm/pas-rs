@@ -20,7 +20,12 @@ use backend::{
             measure::{create_measure, delete_measure, detail_measure, edit_measure, get_measures},
             product::{create_product, delete_product, detail_product, edit_product, get_products},
         },
-        users::user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
+        users::{
+            organization::{
+                create_organization, detail_organization, edit_organization, get_organizations,
+            },
+            user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
+        },
     },
     CurrentUser,
 };
@@ -56,6 +61,14 @@ async fn main() {
     let api = Router::new()
         // Check Auth
         .route("/logout", post(logout))
+        .route(
+            "/organizations",
+            get(get_organizations).post(create_organization),
+        )
+        .route(
+            "/organizations/:id",
+            get(detail_organization).patch(edit_organization),
+        )
         .route("/current", get(current_user))
         .route("/users", get(get_users).post(create_user))
         .route("/users/:id", get(detail_user).patch(edit_user))
@@ -154,6 +167,7 @@ async fn authorize_current_user(
             CurrentUser,
             "select
             users.id,
+            users.organization_id,
             users.role,
             users.email,
             users.fio,
