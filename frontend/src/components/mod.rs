@@ -21,12 +21,6 @@ pub trait SelectableItem {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Select {
-    pub id: i64,
-    pub name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ResponseError {
     pub detail: String,
 }

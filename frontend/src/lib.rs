@@ -84,17 +84,25 @@ pub struct ResponseId {
     id: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct Select {
+    pub id: i64,
+    pub name: String,
+}
+
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 pub struct User {
     pub id: i64,
     pub role: Role,
     pub email: String,
     pub passwd: Option<String>,
-    pub fio: Option<String>,
+    pub fio: String,
     pub blocked: bool,
 
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+
+    pub organization: Option<Select>,
 }
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]

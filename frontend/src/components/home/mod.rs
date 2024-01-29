@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::Select;
+use crate::Select;
 
 pub mod component;
 pub mod list;

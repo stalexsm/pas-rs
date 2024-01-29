@@ -10,25 +10,33 @@ pub struct Props {
     pub item: Option<User>,
 
     pub toggle_modal: Callback<MouseEvent>,
-    pub on_save: Callback<(String, Option<String>, Role, Option<bool>)>,
+    pub on_save: Callback<(String, String, Role, Option<bool>)>,
 }
 
 #[function_component(Modal)]
-pub fn modal(props: &Props) -> Html {
+pub fn modal(
+    Props {
+        current_user,
+        is_visible,
+        item,
+        toggle_modal,
+        on_save,
+    }: &Props,
+) -> Html {
     // Заполнение данными
 
     let email = use_state_eq(|| "".to_string());
-    let fio = use_state_eq(|| None);
+    let fio = use_state_eq(|| "".to_string());
     let role = use_state_eq(Role::default);
     let blocked = use_state_eq(|| false);
 
     {
-        let cloned_item = props.item.clone();
+        let cloned_item = item.clone();
         let cloned_email = email.clone();
         let cloned_fio = fio.clone();
         let cloned_role = role.clone();
         let cloned_blocked = blocked.clone();
-        use_effect_with(props.is_visible, move |visible| {
+        use_effect_with(*is_visible, move |visible| {
             if *visible {
                 if let Some(item) = cloned_item.clone() {
                     cloned_email.set(item.email);
@@ -37,7 +45,7 @@ pub fn modal(props: &Props) -> Html {
                     cloned_blocked.set(item.blocked);
                 } else {
                     cloned_email.set("".to_string());
-                    cloned_fio.set(Some("".to_string()));
+                    cloned_fio.set("".to_string());
                     cloned_role.set(Role::User);
                     cloned_blocked.set(false);
                 }
@@ -64,7 +72,7 @@ pub fn modal(props: &Props) -> Html {
             .unchecked_into::<HtmlSelectElement>()
             .value();
 
-        cloned_fio.set(Some(value));
+        cloned_fio.set(value);
     });
 
     let cloned_role = role.clone();
@@ -90,7 +98,7 @@ pub fn modal(props: &Props) -> Html {
         let cloned_fio = fio.clone();
         let cloned_role = role.clone();
         let cloned_blocked = blocked.clone();
-        let cloned_on_save = props.on_save.clone();
+        let cloned_on_save = on_save.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
 
@@ -106,7 +114,7 @@ pub fn modal(props: &Props) -> Html {
     html! {
         <div>
             <div
-                class={format!("py-12 bg-gray-700 transition duration-150 ease-in-out z-10 absolute top-0 right-0 bottom-0 left-0 {}", if props.is_visible {""} else {"hidden"})}
+                class={format!("py-12 bg-gray-700 transition duration-150 ease-in-out z-10 absolute top-0 right-0 bottom-0 left-0 {}", if *is_visible {""} else {"hidden"})}
                     id="modal"
                 >
                     <div
@@ -126,7 +134,7 @@ pub fn modal(props: &Props) -> Html {
                             >
                                 <label for="email" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Email"}</label>
                                 <input
-                                    disabled={props.item.is_some()}
+                                    disabled={item.is_some()}
                                     onchange={onchange_email}
                                     required={true}
                                     pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -148,25 +156,25 @@ pub fn modal(props: &Props) -> Html {
                                 />
                                 <label for="role" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Роль"}</label>
                                 <select
-                                    disabled={props.item.as_ref().map_or_else(|| false, |it| props.current_user.as_ref().map_or(false, |u| u.id == it.id))}
+                                    disabled={item.as_ref().map_or_else(|| false, |it| current_user.as_ref().map_or(false, |u| u.id == it.id))}
                                     onchange={onchange_role}
                                     id="role"
                                     class="mb-5 mt-2 text-gray-600 focus:outline-none focus:border focus:border-indigo-700 font-normal w-full h-10 flex items-center pl-3 text-sm border-gray-300 rounded border"
                                     placeholder="Выберите Ед. измерения">
                                     {[(Role::Admin, "Администратор"), (Role::User, "Пользователь")].iter().map(|(role, name)| {
                                             html! {
-                                                <option selected={props.item.as_ref().map_or_else(|| false, |it| &it.role == role)} value={role.to_string()}>{name}</option>
+                                                <option selected={item.as_ref().map_or_else(|| false, |it| &it.role == role)} value={role.to_string()}>{name}</option>
                                             }
                                         }).collect::<Html>()
                                     }
                                 </select>
-                                if props.item.is_some(){
+                                if item.is_some(){
                                     <div class="mb-5 flex items-center">
                                     <label class="relative inline-flex cursor-pointer items-center">
                                         <input
-                                            disabled={props.item.as_ref().map_or_else(|| false, |it| props.current_user.as_ref().map_or(false, |u| u.id == it.id))}
+                                            disabled={item.as_ref().map_or_else(|| false, |it| current_user.as_ref().map_or(false, |u| u.id == it.id))}
                                             onchange={onchange_blocked}
-                                            checked={props.item.as_ref().map(|it| it.blocked).unwrap_or(false)}
+                                            checked={item.as_ref().map(|it| it.blocked).unwrap_or(false)}
                                             id="switch"
                                             type="checkbox"
                                             class="peer sr-only" />
@@ -178,7 +186,7 @@ pub fn modal(props: &Props) -> Html {
                                 }
                                 <div class="flex items-center justify-center w-full">
                                     <button
-                                        onclick={props.toggle_modal.clone()}
+                                        onclick={toggle_modal.clone()}
                                         class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 ml-3 bg-gray-100 transition duration-150 text-gray-600 ease-in-out hover:border-gray-400 hover:bg-gray-300 border rounded px-8 py-2 text-sm mr-5" >
                                         {"Отменить"}
                                     </button>
@@ -189,7 +197,7 @@ pub fn modal(props: &Props) -> Html {
                                     </button>
                                 </div>
                                 <button
-                                    onclick={props.toggle_modal.clone()}
+                                    onclick={toggle_modal.clone()}
                                     class="cursor-pointer absolute top-0 right-0 mt-4 mr-5 text-gray-400 hover:text-gray-600 transition duration-150 ease-in-out rounded focus:ring-2 focus:outline-none focus:ring-gray-600"
                                     aria-label="close modal"
                                     role="button">

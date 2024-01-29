@@ -211,7 +211,7 @@ pub fn header() -> Html {
                                 class="text-gray-300 relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                                 id="user-menu-button"
                             >
-                                {current_user.as_ref().map(|u| u.fio.as_ref().map_or_else(|| u.email.clone(), |fio| fio.clone())).unwrap_or("N/A".to_string())}
+                                {current_user.as_ref().map(|u| u.fio.clone())}
                             </button>
                             <div class={format!("absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none {}", if !*modal_visible {"hidden"} else {""} )}
                                 role="menu"

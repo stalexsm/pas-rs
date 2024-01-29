@@ -2,12 +2,12 @@ use gloo::{
     net::http,
     storage::{LocalStorage, Storage},
 };
-use log::debug;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
+    check_is_admin,
     components::{
         elements::paginate::{Paginate, Q},
         footer::Footer,
@@ -21,7 +21,7 @@ use crate::{
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
     email: String,
-    fio: Option<String>,
+    fio: String,
     role: Role,
     blocked: Option<bool>,
 }
@@ -125,8 +125,6 @@ pub fn user() -> Html {
                     blocked,
                 };
 
-                debug!("{:?}", req_data);
-
                 // Хак для Home
                 let path = "/api/users";
 
@@ -184,6 +182,9 @@ pub fn user() -> Html {
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                         <th scope="col" class="w-0.5 px-6 py-4 font-medium text-gray-900 uppercase"></th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Фио"}</th>
+                        if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                             <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Организация"}</th>
+                        }
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Роль"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Блокировка"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>

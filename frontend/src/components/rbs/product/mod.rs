@@ -1,5 +1,6 @@
-use crate::components::Select;
 use serde::{Deserialize, Serialize};
+
+use crate::Select;
 
 pub mod component;
 pub mod list;

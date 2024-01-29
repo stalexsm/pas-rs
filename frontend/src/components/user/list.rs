@@ -1,4 +1,4 @@
-use crate::{Role, User};
+use crate::{check_is_admin, Role, User};
 use chrono::Local;
 use yew::prelude::*;
 
@@ -56,13 +56,16 @@ pub fn user_lists(
                     <th class="flex gap-3 px-6 py-4 font-normal text-gray-900">
                     <div class="text-sm">
                         <div class="font-medium text-gray-700">
-                            {item.fio.clone().unwrap_or_else(|| "N/A".to_string() )}
+                            {item.fio.clone()}
                         </div>
                         <div class="text-gray-400">
                             {item.email.clone()}
                         </div>
                     </div>
                     </th>
+                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                         <td class="px-6 py-4"> {item.organization.clone().map_or("-".to_string(), |o| o.name.clone())} </td>
+                    }
                     <td class="px-6 py-4">{
                         match item.role {
                             Role::Developer => {"Разработчик"},

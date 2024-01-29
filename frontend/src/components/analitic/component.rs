@@ -368,7 +368,7 @@ pub fn analitic() -> Html {
                         }
                 }
                 items={
-                    (*users).iter().map(|u| Item {id: u.id, name: u.fio.as_ref().map_or(u.email.clone(), |fio| fio.clone())}).collect::<Vec<Item>>()
+                    (*users).iter().map(|u| Item {id: u.id, name: u.fio.clone()}).collect::<Vec<Item>>()
                 }
             />
             // <input
