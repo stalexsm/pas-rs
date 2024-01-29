@@ -67,6 +67,17 @@ impl From<String> for Role {
     }
 }
 
+impl ToString for Role {
+    fn to_string(&self) -> String {
+        match self {
+            Role::Developer => "Developer".to_string(),
+            Role::Admin => "Admin".to_string(),
+            Role::Director => "Director".to_string(),
+            Role::User => "User".to_string(),
+        }
+    }
+}
+
 pub fn check_is_admin(role: Role) -> bool {
     // Вспомогательная функция для проверки админских ролей
 

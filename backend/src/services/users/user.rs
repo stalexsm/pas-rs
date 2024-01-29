@@ -1,4 +1,8 @@
-use crate::{check_access, check_is_admin, services::Items, AppError, CurrentUser, Role};
+use crate::{
+    check_access, check_is_admin,
+    services::{Items, Select},
+    AppError, CurrentUser, Role,
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -60,8 +64,8 @@ pub async fn create_user(
 
         let row: (i64,) = sqlx::query_as(
             "insert
-            into users (role, email, fio, passwd, blocked, organization_id) values
-            ($1, $2, $3, $4, $5, $6) returning id",
+            INTO users (role, email, fio, passwd, blocked, organization_id) VALUES
+            ($1, $2, $3, $4, $5, $6) RETURNING id",
         )
         .bind(body.role)
         .bind(body.email)
@@ -111,9 +115,9 @@ pub async fn edit_user(
         }
 
         let _ = sqlx::query(
-            "update users
-            set role=$1, fio=$2, blocked=$3, organization_id=$4, updated_at=NOW()
-            where id = $5",
+            "UPDATE users
+            SET role=$1, fio=$2, blocked=$3, organization_id=$4, updated_at=NOW()
+            WHERE id = $5",
         )
         .bind(body.role)
         .bind(body.fio)
@@ -144,9 +148,9 @@ pub async fn edit_passwd(
     } else {
         let hash_passwd = bcrypt::hash(body.passwd1, bcrypt::DEFAULT_COST)?;
         let _ = sqlx::query(
-            "update users
-            set passwd=$1, updated_at=NOW()
-            where id = $2",
+            "UPDATE users
+            SET passwd=$1, updated_at=NOW()
+            WHERE id = $2",
         )
         .bind(hash_passwd)
         .bind(id)
@@ -173,16 +177,17 @@ fn page() -> i64 {
     1
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, sqlx::FromRow, Default)]
 pub struct Item {
     pub id: i64,
-    pub organization_id: Option<i64>,
     pub role: Role,
     pub email: String,
-    pub fio: Option<String>,
+    pub fio: String,
     pub blocked: bool,
 
     pub created_at: chrono::DateTime<chrono::Utc>,
+
+    pub organization: Option<Select>,
 }
 
 pub async fn get_users(
@@ -198,27 +203,53 @@ pub async fn get_users(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let rows = sqlx::query_as!(
-            Item,
-            "select
-            id,
-            organization_id,
-            role,
-            email,
-            fio,
-            blocked,
-            created_at
-        from users
-        order by id desc
-        offset $1 limit $2;",
+        let rows = sqlx::query!(
+            "SELECT
+              u.id,
+              u.role,
+              u.email,
+              u.fio,
+              u.blocked,
+              u.created_at,
+              CASE
+                WHEN o.id IS NOT NULL AND o.name IS NOT NULL THEN
+                    JSONB_BUILD_OBJECT(
+                        'id', o.id,
+                        'name', o.name
+                    )
+                ELSE
+                  NULL
+              END AS organization
+              FROM
+                users AS u
+                LEFT JOIN organizations AS o ON o.id = u.organization_id
+              WHERE
+                CASE
+                    WHEN $1::bigint IS NOT NULL AND $2 = 'Director' THEN
+                        u.organization_id = $1
+                    ELSE TRUE
+                END
+            ORDER BY u.id DESC
+            OFFSET $3 LIMIT $4",
+            current_user.organization_id,
+            current_user.role.to_string(),
             (q.page - 1) * q.per_page,
             q.per_page,
         )
+        .map(|row| Item {
+            id: row.id,
+            role: row.role.into(),
+            email: row.email,
+            fio: row.fio,
+            blocked: row.blocked,
+            created_at: row.created_at,
+            organization: row.organization.map(|o| o.into()),
+        })
         .fetch_all(&pool)
         .await?;
 
         // Подсчет данных для пагинации
-        let cnt: i64 = sqlx::query_scalar("select count(id) from users;;")
+        let cnt: i64 = sqlx::query_scalar("select count(id) from users;")
             .fetch_one(&pool)
             .await
             .unwrap_or(0);
@@ -242,25 +273,43 @@ pub async fn detail_user(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let row = sqlx::query_as!(
-            Item,
-            "select
-            id,
-            organization_id,
-            role,
-            email,
-            fio,
-            blocked,
-            created_at
-        from users
-        where id = $1;",
+        let row = sqlx::query!(
+            "SELECT
+              u.id,
+              u.role,
+              u.email,
+              u.fio,
+              u.blocked,
+              u.created_at,
+              CASE
+                WHEN o.id IS NOT NULL AND o.name IS NOT NULL THEN
+                    JSONB_BUILD_OBJECT(
+                        'id', o.id,
+                        'name', o.name
+                    )
+                ELSE
+                  NULL
+              END AS organization
+             FROM
+              users AS u
+              LEFT JOIN organizations AS o ON o.id = u.organization_id
+            WHERE
+              u.id = $1;",
             id
         )
         .fetch_optional(&pool)
         .await?;
 
         match row {
-            Some(row) => Ok(row),
+            Some(row) => Ok(Item {
+                id: row.id,
+                role: row.role.into(),
+                email: row.email,
+                fio: row.fio,
+                blocked: row.blocked,
+                created_at: row.created_at,
+                organization: row.organization.map(|o| o.into()),
+            }),
             None => Err(AppError(
                 StatusCode::NOT_FOUND,
                 anyhow::anyhow!("Такой записи не существует!"),
@@ -275,25 +324,43 @@ pub async fn current_user(
 ) -> Result<Item, AppError> {
     // Endpoint для получения пользовательских данных по токену.
 
-    let row = sqlx::query_as!(
-        Item,
-        "select
-        id,
-        organization_id,
-        role,
-        email,
-        fio,
-        blocked,
-        created_at
-    from users
-    where id = $1;",
+    let row = sqlx::query!(
+        "SELECT
+          u.id,
+          u.role,
+          u.email,
+          u.fio,
+          u.blocked,
+          u.created_at,
+          CASE
+            WHEN o.id IS NOT NULL AND o.name IS NOT NULL THEN
+                JSONB_BUILD_OBJECT(
+                    'id', o.id,
+                    'name', o.name
+                )
+            ELSE
+              NULL
+          END AS organization
+         FROM
+          users AS u
+          LEFT JOIN organizations AS o ON o.id = u.organization_id
+        WHERE
+          u.id = $1;",
         current_user.id
     )
     .fetch_optional(&pool)
     .await?;
 
     match row {
-        Some(row) => Ok(row),
+        Some(row) => Ok(Item {
+            id: row.id,
+            role: row.role.into(),
+            email: row.email,
+            fio: row.fio,
+            blocked: row.blocked,
+            created_at: row.created_at,
+            organization: row.organization.map(|o| o.into()),
+        }),
         None => Err(AppError(
             StatusCode::NOT_FOUND,
             anyhow::anyhow!("Такой записи не существует!"),
