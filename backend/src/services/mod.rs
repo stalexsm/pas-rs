@@ -27,3 +27,19 @@ impl From<serde_json::Value> for Select {
         }
     }
 }
+
+impl From<Option<serde_json::Value>> for Select {
+    fn from(value: Option<serde_json::Value>) -> Self {
+        match value {
+            Some(s) => {
+                let s = s.to_string();
+
+                match serde_json::from_str::<Select>(&s).ok() {
+                    Some(o) => o,
+                    _ => Default::default(),
+                }
+            }
+            _ => Default::default(),
+        }
+    }
+}

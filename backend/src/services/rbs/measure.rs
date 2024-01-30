@@ -6,7 +6,11 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::{check_access, check_is_admin, services::Items, AppError, CurrentUser};
+use crate::{
+    check_access, check_is_admin,
+    services::{Items, Select},
+    AppError, CurrentUser,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -36,9 +40,9 @@ pub async fn create_measure(
         match organization_id {
             Some(organization_id) => {
                 let row: (i64,) = sqlx::query_as(
-                    "insert
-                    into measure_units (name, organization_id) values
-                    ($1, $2) returning id",
+                    "INSERT
+                    INTO measure_units (name, organization_id) VALUES
+                    ($1, $2) RETURNING id",
                 )
                 .bind(body.name)
                 .bind(organization_id)
@@ -78,9 +82,9 @@ pub async fn edit_measure(
         match organization_id {
             Some(organization_id) => {
                 let _ = sqlx::query(
-                    "update measure_units
-                    set name=$1, organization_id=$2, updated_at=NOW()
-                    where id = $3",
+                    "UPDATE measure_units
+                    SET name=$1, organization_id=$2, updated_at=NOW()
+                    WHERE id = $3",
                 )
                 .bind(body.name)
                 .bind(organization_id)
@@ -117,10 +121,10 @@ fn page() -> i64 {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
-    organization_id: i64,
     pub name: String,
-
     pub created_at: chrono::DateTime<chrono::Utc>,
+
+    organization: Select,
 }
 
 pub async fn get_measures(
@@ -130,24 +134,33 @@ pub async fn get_measures(
 ) -> Result<Items<Item>, anyhow::Error> {
     // Бизнес логика редактирования пользователя
 
-    let rows = sqlx::query_as!(
-        Item,
-        "select
-            id,
-            organization_id,
-            name,
-            created_at
-        from measure_units
-        order by id desc
-        offset $1 limit $2;",
+    let rows = sqlx::query!(
+        "SELECT
+            mu.id,
+            mu.name,
+            mu.created_at,
+            JSONB_BUILD_OBJECT(
+                'id', o.id,
+                'name', o.name
+            ) AS organization
+        FROM measure_units AS mu
+        LEFT JOIN organizations AS o ON o.id = mu.organization_id
+        ORDER BY mu,id DESC
+        OFFSET $1 LIMIT $2;",
         (q.page - 1) * q.per_page,
         q.per_page,
     )
+    .map(|row| Item {
+        id: row.id,
+        name: row.name,
+        created_at: row.created_at,
+        organization: row.organization.into(),
+    })
     .fetch_all(&pool)
     .await?;
 
     // Подсчет данных для пагинации
-    let cnt: i64 = sqlx::query_scalar("select count(id) from measure_units;")
+    let cnt: i64 = sqlx::query_scalar("SELCT COUNT(id) FROM measure_units;")
         .fetch_one(&pool)
         .await
         .unwrap_or(0);
@@ -170,22 +183,30 @@ pub async fn detail_measure(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let row = sqlx::query_as!(
-            Item,
-            "select
-            id,
-            organization_id,
-            name,
-            created_at
-        from measure_units
-        where id = $1;",
+        let row = sqlx::query!(
+            "SELECT
+            mu.id,
+            mu.name,
+            mu.created_at,
+            JSONB_BUILD_OBJECT(
+                'id', o.id,
+                'name', o.name
+            ) AS organization
+        FROM measure_units AS mu
+        LEFT JOIN organizations AS o ON o.id = mu.organization_id
+        where mu.id = $1;",
             id
         )
         .fetch_optional(&pool)
         .await?;
 
         match row {
-            Some(row) => Ok(row),
+            Some(row) => Ok(Item {
+                id: row.id,
+                name: row.name,
+                created_at: row.created_at,
+                organization: row.organization.into(),
+            }),
             None => Err(AppError(
                 StatusCode::FORBIDDEN,
                 anyhow::anyhow!("Такой записи не существует"),

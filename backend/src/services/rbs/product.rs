@@ -4,9 +4,13 @@ use axum::{
     Extension, Json,
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgRow, PgPool, Row};
+use sqlx::PgPool;
 
-use crate::{check_access, check_is_admin, services::Items, AppError, CurrentUser};
+use crate::{
+    check_access, check_is_admin,
+    services::{Items, Select},
+    AppError, CurrentUser,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -37,9 +41,9 @@ pub async fn create_product(
         match organization_id {
             Some(organization_id) => {
                 let row: (i64,) = sqlx::query_as(
-                    "insert
-                    into products (name, measure_unit_id, organization_id) values
-                    ($1, $2, $3) returning id",
+                    "INSERT
+INTO products (name, measure_unit_id, organization_id) VALUES
+                    ($1, $2, $3) RETURNING id",
                 )
                 .bind(body.name)
                 .bind(body.measure_unit_id)
@@ -80,9 +84,9 @@ pub async fn edit_product(
         match organization_id {
             Some(organization_id) => {
                 let _ = sqlx::query(
-                    "update products
-                    set name=$1, measure_unit_id=$2, organization_id=$3 updated_at=NOW()
-                    where id = $4",
+                    "UPDATE products
+SET name=$1, measure_unit_id=$2, organization_id=$3 updated_at=NOW()
+                    WHERE id = $4",
                 )
                 .bind(body.name)
                 .bind(body.measure_unit_id)
@@ -118,18 +122,12 @@ fn page() -> i64 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Select {
-    pub id: i64,
-    pub name: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Item {
     pub id: i64,
-    pub organization_id: i64,
     pub name: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 
+    organization: Select,
     measure_unit: Select,
 }
 
@@ -140,36 +138,39 @@ pub async fn get_products(
 ) -> Result<Items<Item>, anyhow::Error> {
     // Бизнес логика получения списка продуктв
 
-    let rows = sqlx::query(
-        r#"select
-            products.id,
-            products.organization_id,
-            products.name,
-            products.created_at,
-            measure_units.id as "measure_unit_id",
-            measure_units.name as "measure_unit_name"
-        from products
-        inner join measure_units on measure_units.id = products.measure_unit_id
-        order by products.id desc
-        offset $1 limit $2;"#,
+    let rows = sqlx::query!(
+        "SELECT
+            p.id,
+            p.name,
+            p.created_at,
+            JSONB_BUILD_OBJECT(
+                'id', mu.id,
+                'name', mu.name
+            ) AS measure_unit,
+            JSONB_BUILD_OBJECT(
+                'id', o.id,
+                'name', o.name
+            ) AS organization
+        FROM products AS p
+        LEFT JOIN measure_units AS mu on mu.id = p.measure_unit_id
+        LEFT JOIN organizations AS o ON o.id = p.organization_id
+        ORDER BY p.id DESC
+        OFFSET $1 LIMIT $2;",
+        (q.page - 1) * q.per_page,
+        q.per_page,
     )
-    .bind((q.page - 1) * q.per_page)
-    .bind(q.per_page)
-    .map(|row: PgRow| Item {
-        id: row.get(0),
-        organization_id: row.get(1),
-        name: row.get(2),
-        created_at: row.get(3),
-        measure_unit: Select {
-            id: row.get(4),
-            name: row.get(5),
-        },
+    .map(|row| Item {
+        id: row.id,
+        name: row.name,
+        created_at: row.created_at,
+        organization: row.organization.into(),
+        measure_unit: row.measure_unit.into(),
     })
     .fetch_all(&pool)
     .await?;
 
     // Подсчет данных для пагинации
-    let cnt: i64 = sqlx::query_scalar("select count(id) from products;")
+    let cnt: i64 = sqlx::query_scalar("SELECT COUNT(id) FROM products;")
         .fetch_one(&pool)
         .await
         .unwrap_or(0);
@@ -192,33 +193,36 @@ pub async fn detail_product(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let row = sqlx::query(
-            r#"select
-            products.id,
-            products.organization_id,
-            products.name,
-            products.created_at,
-            measure_units.id as "measure_unit_id",
-            measure_units.name as "measure_unit_name"
-        from products
-        inner join measure_units on measure_units.id = products.measure_unit_id
-        where products.id = $1;"#,
+        let row = sqlx::query!(
+            "SELECT
+                p.id,
+                p.name,
+                p.created_at,
+                JSONB_BUILD_OBJECT(
+                    'id', mu.id,
+                    'name', mu.name
+                ) AS measure_unit,
+                JSONB_BUILD_OBJECT(
+                    'id', o.id,
+                    'name', o.name
+                ) AS organization
+            FROM products AS p
+            LEFT JOIN measure_units AS mu on mu.id = p.measure_unit_id
+            LEFT JOIN organizations AS o ON o.id = p.organization_id
+        WHERE p.id = $1;",
+            id,
         )
-        .bind(id)
         .fetch_optional(&pool)
         .await?;
 
         match row {
             // Собираем в нужный вид
             Some(row) => Ok(Item {
-                id: row.get(0),
-                organization_id: row.get(1),
-                name: row.get(2),
-                created_at: row.get(3),
-                measure_unit: Select {
-                    id: row.get(4),
-                    name: row.get(5),
-                },
+                id: row.id,
+                name: row.name,
+                created_at: row.created_at,
+                organization: row.organization.into(),
+                measure_unit: row.measure_unit.into(),
             }),
             None => Err(AppError(
                 StatusCode::FORBIDDEN,
