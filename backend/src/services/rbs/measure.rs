@@ -145,7 +145,7 @@ pub async fn get_measures(
             ) AS organization
         FROM measure_units AS mu
         LEFT JOIN organizations AS o ON o.id = mu.organization_id
-        ORDER BY mu,id DESC
+        ORDER BY mu.id DESC
         OFFSET $1 LIMIT $2;",
         (q.page - 1) * q.per_page,
         q.per_page,

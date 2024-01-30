@@ -8,6 +8,7 @@ use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
+    check_is_admin,
     components::{
         elements::{
             modal::ModalDelete,
@@ -24,6 +25,7 @@ use crate::{
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
     name: String,
+    organization_id: i64,
 }
 
 #[function_component(MeasureUnitComponent)]
@@ -126,7 +128,7 @@ pub fn measure_unit() -> Html {
         let cloned_item = item.clone();
         let cloned_rendered = rendered.clone();
         let navigator = use_navigator();
-        Callback::from(move |name| {
+        Callback::from(move |(name, organization_id)| {
             let mut header_bearer = String::from("Bearer ");
             let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
             if let Some(t) = token.clone() {
@@ -138,7 +140,10 @@ pub fn measure_unit() -> Html {
             let cloned_rendered = cloned_rendered.clone();
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let req_data = RequestData { name };
+                let req_data = RequestData {
+                    name,
+                    organization_id,
+                };
                 // Хак для Home
                 let path = "/api/measure-units";
 
@@ -237,6 +242,9 @@ pub fn measure_unit() -> Html {
                     <tr>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Название"}</th>
+                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Организация"}</th>
+                    }
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase"></th>
                     </tr>
@@ -244,7 +252,7 @@ pub fn measure_unit() -> Html {
                 <tbody class="divide-y divide-gray-100 border-t border-gray-100">
                     <MeasureUnitList
                         items={items.deref().items.clone()}
-                        current_user={current_user}
+                    current_user={current_user.clone()}
                         {on_edit}
                         on_delete={on_delete_modal}
                     />
@@ -269,6 +277,7 @@ pub fn measure_unit() -> Html {
         />
 
         <Modal
+            current_user={current_user}
             is_visible={*is_visible}
             item={(*item).clone()}
             {toggle_modal}
