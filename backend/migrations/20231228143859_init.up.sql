@@ -72,6 +72,7 @@ DROP TABLE IF EXISTS produced_goods CASCADE;
 CREATE TABLE produced_goods (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    organization_id BIGINT NULL REFERENCES organizations (id) ON DELETE CASCADE,
     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     cnt bigint NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -79,6 +80,7 @@ CREATE TABLE produced_goods (
 );
 
 CREATE INDEX ON produced_goods (user_id);
+CREATE INDEX ON produced_goods (organization_id);
 CREATE INDEX ON produced_goods (product_id);
 
 
