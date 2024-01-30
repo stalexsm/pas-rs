@@ -63,6 +63,8 @@ pub enum Route {
     MeasureUnit,
     #[at("/analitics")]
     Analitic,
+    #[at("/organizations")]
+    Organization,
     #[not_found]
     #[at("/404")]
     NotFound,

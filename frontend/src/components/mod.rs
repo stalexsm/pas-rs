@@ -7,6 +7,7 @@ pub mod footer;
 pub mod header;
 pub mod home;
 pub mod not_found;
+pub mod organization;
 pub mod rbs;
 pub mod user;
 
