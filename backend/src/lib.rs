@@ -3,9 +3,8 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{fmt, str::FromStr};
 
 use uuid::Uuid;
 
@@ -99,17 +98,4 @@ pub struct CurrentUser {
     pub fio: Option<String>,
     pub blocked: bool,
     pub token: Uuid,
-}
-
-fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: FromStr,
-    T::Err: fmt::Display,
-{
-    let opt = Option::<String>::deserialize(de)?;
-    match opt.as_deref() {
-        None | Some("") => Ok(None),
-        Some(s) => FromStr::from_str(s).map_err(de::Error::custom).map(Some),
-    }
 }

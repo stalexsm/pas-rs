@@ -19,7 +19,7 @@ pub struct Props {
 #[function_component(Modal)]
 pub fn modal(
     Props {
-        current_user,
+        current_user: _,
         is_visible,
         item,
         toggle_modal,

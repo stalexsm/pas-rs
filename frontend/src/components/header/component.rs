@@ -43,8 +43,8 @@ pub fn header() -> Html {
                 (Route::Product, String::from("Товары")),
                 (Route::MeasureUnit, String::from("Единицы измерения")),
                 (Route::User, String::from("Пользователи")),
-                (Route::Analitic, String::from("Аналитика")),
                 (Route::Organization, String::from("Организации")),
+                (Route::Analitic, String::from("Аналитика")),
             ])
         }
     }
