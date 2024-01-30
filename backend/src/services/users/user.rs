@@ -249,7 +249,7 @@ pub async fn get_users(
         .await?;
 
         // Подсчет данных для пагинации
-        let cnt: i64 = sqlx::query_scalar("select count(id) from users;")
+        let cnt: i64 = sqlx::query_scalar("SELECT COUNT(id) FROM users;")
             .fetch_one(&pool)
             .await
             .unwrap_or(0);

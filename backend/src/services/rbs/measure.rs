@@ -129,7 +129,7 @@ pub struct Item {
 
 pub async fn get_measures(
     State(pool): State<PgPool>,
-    Extension(_current_user): Extension<CurrentUser>,
+    Extension(current_user): Extension<CurrentUser>,
     Query(q): Query<Q>,
 ) -> Result<Items<Item>, anyhow::Error> {
     // Бизнес логика редактирования пользователя
@@ -145,8 +145,16 @@ pub async fn get_measures(
             ) AS organization
         FROM measure_units AS mu
         LEFT JOIN organizations AS o ON o.id = mu.organization_id
+        WHERE
+            CASE
+                WHEN $1::bigint IS NOT NULL AND $2 not in ('Admin', 'Developer') THEN
+                    mu.organization_id = $1
+                ELSE TRUE
+            END
         ORDER BY mu.id DESC
-        OFFSET $1 LIMIT $2;",
+        OFFSET $3 LIMIT $4;",
+        current_user.organization_id,
+        current_user.role.to_string(),
         (q.page - 1) * q.per_page,
         q.per_page,
     )
