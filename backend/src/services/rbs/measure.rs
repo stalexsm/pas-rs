@@ -202,7 +202,7 @@ pub async fn detail_measure(
             ) AS organization
         FROM measure_units AS mu
         LEFT JOIN organizations AS o ON o.id = mu.organization_id
-        where mu.id = $1;",
+        WHERE mu.id = $1;",
             id
         )
         .fetch_optional(&pool)
@@ -237,9 +237,9 @@ pub async fn delete_measure(
         ))
     } else {
         let _ = sqlx::query(
-            "delete
-        from measure_units
-        where id = $1;",
+            "DELETE
+        FROM measure_units
+        WHERE id = $1;",
         )
         .bind(id)
         .execute(&pool)

@@ -22,7 +22,8 @@ use backend::{
         },
         users::{
             organization::{
-                create_organization, detail_organization, edit_organization, get_organizations,
+                create_organization, delete_organization, detail_organization, edit_organization,
+                get_organizations,
             },
             user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
         },
@@ -67,7 +68,9 @@ async fn main() {
         )
         .route(
             "/organizations/:id",
-            get(detail_organization).patch(edit_organization),
+            get(detail_organization)
+                .patch(edit_organization)
+                .delete(delete_organization),
         )
         .route("/current", get(current_user))
         .route("/users", get(get_users).post(create_user))

@@ -60,3 +60,18 @@ pub async fn detail_organization(
 
     Ok(Json(item))
 }
+
+pub async fn delete_organization(
+    State(pool): State<PgPool>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> Result<Json<HashMap<String, String>>, AppError> {
+    // Метод удаления единицы измерения
+
+    serv::delete_organization(State(pool), Extension(current_user), Path(id)).await?;
+
+    Ok(Json(HashMap::from([(
+        "detail".to_string(),
+        "OK".to_string(),
+    )])))
+}

@@ -26,9 +26,9 @@ pub async fn create_organization(
         ))
     } else {
         let row: (i64,) = sqlx::query_as(
-            "insert
-            into organizations (name) values
-            ($1) returning id",
+            "INSERT
+            INTO organizations (name) VALUES
+            ($1) RETURNING id",
         )
         .bind(body.name)
         .fetch_one(&pool)
@@ -53,9 +53,9 @@ pub async fn edit_organization(
         ))
     } else {
         let _ = sqlx::query(
-            "update organizations
-            set name=$1, updated_at=NOW()
-            where id = $2",
+            "UPDATE organizations
+            SET name=$1, updated_at=NOW()
+            WHERE id = $2",
         )
         .bind(body.name)
         .bind(id)
@@ -105,13 +105,13 @@ pub async fn get_organizations(
     } else {
         let rows = sqlx::query_as!(
             Item,
-            "select
+            "SELECT
             id,
             name,
             created_at
-        from organizations
-        order by id desc
-        offset $1 limit $2;",
+        FROM organizations
+        ORDER BY id DESC
+        OFFSET $1 LIMIT $2;",
             (q.page - 1) * q.per_page,
             q.per_page,
         )
@@ -119,7 +119,7 @@ pub async fn get_organizations(
         .await?;
 
         // Подсчет данных для пагинации
-        let cnt: i64 = sqlx::query_scalar("select count(id) from organizations;")
+        let cnt: i64 = sqlx::query_scalar("SELECT COUNT(id) FROM organizations;")
             .fetch_one(&pool)
             .await
             .unwrap_or(0);
@@ -145,12 +145,12 @@ pub async fn detail_organization(
     } else {
         let row = sqlx::query_as!(
             Item,
-            "select
+            "SELECT
             id,
             name,
             created_at
-        from organizations
-        where id = $1;",
+        FROM organizations
+        WHERE id = $1;",
             id
         )
         .fetch_optional(&pool)
@@ -163,5 +163,31 @@ pub async fn detail_organization(
                 anyhow::anyhow!("Такой записи не существует!"),
             )),
         }
+    }
+}
+
+pub async fn delete_organization(
+    State(pool): State<PgPool>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> Result<(), AppError> {
+    // Бизнес логика редактирования пользователя
+
+    if !check_is_admin(current_user.role) {
+        Err(AppError(
+            StatusCode::FORBIDDEN,
+            anyhow::anyhow!("У вас нет доступа для данного действия!"),
+        ))
+    } else {
+        let _ = sqlx::query(
+            "DELETE
+        FROM organizations
+        WHERE id = $1;",
+        )
+        .bind(id)
+        .execute(&pool)
+        .await?;
+
+        Ok(())
     }
 }

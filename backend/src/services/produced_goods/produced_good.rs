@@ -4,8 +4,9 @@ use axum::{
     Extension, Json,
 };
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgRow, PgPool, Row};
+use sqlx::PgPool;
 
 use crate::{check_is_admin, services::Items, AppError, CurrentUser};
 
@@ -23,13 +24,32 @@ pub async fn create_produced_good(
     // Бизнес логика создания продукта
 
     let row: (i64,) = sqlx::query_as(
-        "insert
-            into produced_goods (product_id, user_id, cnt) values
-            ($1, $2, $3) returning id",
+        "INSERT INTO
+          produced_goods (product_id, user_id, cnt, organization_id)
+        VALUES
+          (
+            $1,
+            $2,
+            $3,
+            CASE
+              WHEN $4::bigint IS NULL THEN (
+                SELECT
+                  p.organization_id
+                FROM
+                  products as p
+                WHERE
+                  p.id = $1
+              )
+              ELSE $4
+            END
+          )
+        RETURNING
+          id",
     )
     .bind(body.product_id)
     .bind(current_user.id)
     .bind(body.cnt)
+    .bind(current_user.organization_id)
     .fetch_one(&pool)
     .await?;
 
@@ -51,13 +71,30 @@ pub async fn edit_produced_good(
         ))
     } else {
         let _ = sqlx::query(
-            "update produced_goods
-            set product_id=$1, cnt=$2, updated_at=NOW()
-            where id = $3",
+            "UPDATE
+              produced_goods
+            SET
+              product_id = $1,
+              cnt = $2,
+              organization_id = CASE
+                WHEN $4::bigint IS NULL THEN (
+                  SELECT
+                    p.organization_id
+                  FROM
+                    products as p
+                  WHERE
+                    p.id = $1
+                )
+                ELSE $4
+              END,
+              updated_at = NOW()
+            WHERE
+              id = $3",
         )
         .bind(body.product_id)
         .bind(body.cnt)
         .bind(id)
+        .bind(current_user.organization_id)
         .execute(&pool)
         .await?;
 
@@ -79,9 +116,9 @@ pub async fn delete_produced_good(
         ))
     } else {
         let _ = sqlx::query(
-            "delete
-        from produced_goods
-        where id = $1;",
+            "DELETE
+        FROM produced_goods
+        WHERE id = $1;",
         )
         .bind(id)
         .execute(&pool)
@@ -124,7 +161,7 @@ pub struct ItemProduct {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct USelect {
     pub id: i64,
-    pub fio: Option<String>,
+    pub fio: String,
     pub email: String,
 }
 
@@ -146,80 +183,92 @@ pub async fn get_produced_goods(
 ) -> Result<Items<Item>, anyhow::Error> {
     // Бизнес логика получения списка продуктв
 
-    let mut where_additional = String::new();
+    let mut current_date: Option<NaiveDate> = None;
+    let mut current_user_id: Option<i64> = None;
     if !check_is_admin(current_user.role) {
-        let current_date = chrono::Utc::now().date_naive();
-        where_additional.push_str(&format!(
-            "and produced_goods.user_id = {0} and produced_goods.created_at between '{1} 00:00:00' and '{1} 23:59:59'",
-            current_user.id, current_date
-        ));
+        current_date = Some(chrono::Utc::now().date_naive());
+        current_user_id = Some(current_user.id);
     }
 
-    let sql = format!(
-        r#"select
-    produced_goods.id,
-    produced_goods.cnt,
-    produced_goods.created_at,
-    products.id as product_id,
-    products.name as product_name,
-    measure_units.id as measure_unit_id,
-    measure_units.name as measure_unit_name,
-    users.id as user_id,
-    users.fio as users_fio,
-    users.email as users_email,
-    sum(COALESCE(produced_good_adjustments.cnt::integer, 0)) as adj
-from produced_goods
-inner join users on users.id = produced_goods.user_id
-inner join products on products.id = produced_goods.product_id
-inner join measure_units on measure_units.id = products.measure_unit_id
-left join produced_good_adjustments on produced_good_adjustments.produced_good_id = produced_goods.id
-where true {}
-group by produced_goods.id,
-  produced_goods.cnt,
-  produced_goods.created_at,
-  products.id,
-  products.name,
-  measure_units.id,
-  measure_units.name,
-  users.id,
-  users.fio,
-  users.email
-order by produced_goods.id desc
-offset $1 limit $2;"#,
-        where_additional
-    );
-
-    let rows = sqlx::query(&sql)
-        .bind((q.page - 1) * q.per_page)
-        .bind(q.per_page)
-        .map(|row: PgRow| Item {
-            id: row.get(0),
-            cnt: row.get(1),
-            adj: row.get(10),
-            created_at: row.get(2),
-            product: ItemProduct {
-                id: row.get(3),
-                name: row.get(4),
-                measure_unit: Select {
-                    id: row.get(5),
-                    name: row.get(6),
-                },
+    let rows = sqlx::query!(
+        "SELECT
+    pg.id,
+    pg.cnt,
+    pg.created_at,
+    p.id AS product_id,
+    p.name AS product_name,
+    mu.id AS measure_unit_id,
+    mu.name AS measure_unit_name,
+    u.id AS user_id,
+    u.fio AS user_fio,
+    u.email AS user_email,
+    SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj
+FROM produced_goods AS pg
+INNER JOIN users AS u on u.id = pg.user_id
+INNER JOIN products AS p  on p.id = pg.product_id
+INNER JOIN measure_units AS mu on mu.id = p.measure_unit_id
+LEFT JOIN produced_good_adjustments AS pga on pga.produced_good_id = pg.id
+WHERE
+    CASE
+        WHEN $1::bigint IS NOT NULL THEN
+            pg.user_id = $1 AND pg.created_at::date = $2
+        WHEN $3::bigint IS NOT NULL AND $4 = 'Director' THEN
+            pg.organization_id = $3
+        ELSE TRUE
+    END
+GROUP BY pg.id,
+  pg.cnt,
+  pg.created_at,
+  p.id,
+  p.name,
+  mu.id,
+  mu.name,
+  u.id,
+  u.fio,
+  u.email
+order by pg.id desc
+offset $5 limit $6;",
+        current_user_id,
+        current_date,
+        current_user.organization_id,
+        current_user.role.to_string(),
+        (q.page - 1) * q.per_page,
+        q.per_page
+    )
+    .map(|row| Item {
+        id: row.id,
+        cnt: row.cnt,
+        adj: row.adj.map_or(0, |a| a),
+        created_at: row.created_at,
+        product: ItemProduct {
+            id: row.product_id,
+            name: row.product_name,
+            measure_unit: Select {
+                id: row.measure_unit_id,
+                name: row.measure_unit_name,
             },
-            user: USelect {
-                id: row.get(7),
-                fio: row.get(8),
-                email: row.get(9),
-            },
-        })
-        .fetch_all(&pool)
-        .await?;
+        },
+        user: USelect {
+            id: row.user_id,
+            fio: row.user_fio,
+            email: row.user_email,
+        },
+    })
+    .fetch_all(&pool)
+    .await?;
 
-    // Подсчет данных для пагинации
-    let sql = format!(
-        "select count(id) from produced_goods where true {};",
-        where_additional
-    );
-    let cnt: i64 = sqlx::query_scalar(&sql).fetch_one(&pool).await.unwrap_or(0);
+    let cnt: i64 = sqlx::query_scalar(
+        "SELECT COUNT(id) FROM produced_goods WHERE CASE
+        WHEN $1::bigint IS NOT NULL THEN
+            pg.user_id = $1 AND pg.created_at::date = $2
+        ELSE TRUE
+    END",
+    )
+    .bind(current_user_id)
+    .bind(current_date)
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(0);
     let cnt = (cnt as f64 / q.per_page as f64).ceil() as i64;
 
     Ok(Items { items: rows, cnt })
@@ -238,59 +287,59 @@ pub async fn detail_produced_good(
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let row = sqlx::query(
-            r#"select
-            produced_goods.id,
-            produced_goods.cnt,
-            produced_goods.created_at,
-            products.id as product_id,
-            products.name as product_name,
-            measure_units.id as measure_unit_id,
-            measure_units.name as measure_unit_name,
-            users.id as user_id,
-            users.fio as users_fio,
-            users.email as users_email,
-            sum(produced_good_adjustments.cnt::integer) as adj
-        from produced_goods
-        inner join users on users.id = produced_goods.user_id
-        inner join products on products.id = produced_goods.product_id
-        inner join measure_units on measure_units.id = products.measure_uint_id
-        inner join produced_good_adjustments on produced_good_adjustments.produced_good_id = produced_goods.id
-        group by produced_goods.id,
-          produced_goods.cnt,
-          produced_goods.created_at,
-          products.id,
-          products.name,
-          measure_units.id,
-          measure_units.name,
-          users.id,
-          users.fio,
-          users.email
-        where products.id = $1;"#,
+        let row = sqlx::query!(
+            "SELECT
+        pg.id,
+        pg.cnt,
+        pg.created_at,
+        p.id AS product_id,
+        p.name AS product_name,
+        mu.id AS measure_unit_id,
+        mu.name AS measure_unit_name,
+        u.id AS user_id,
+        u.fio AS user_fio,
+        u.email AS user_email,
+        SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj
+    FROM produced_goods AS pg
+    INNER JOIN users AS u on u.id = pg.user_id
+    INNER JOIN products AS p  on p.id = pg.product_id
+    INNER JOIN measure_units AS mu on mu.id = p.measure_unit_id
+    LEFT JOIN produced_good_adjustments AS pga on pga.produced_good_id = pg.id
+    WHERE p.id = $1
+    GROUP BY pg.id,
+      pg.cnt,
+      pg.created_at,
+      p.id,
+      p.name,
+      mu.id,
+      mu.name,
+      u.id,
+      u.fio,
+      u.email;",
+            id
         )
-        .bind(id)
         .fetch_optional(&pool)
         .await?;
 
         match row {
             // Собираем в нужный вид
             Some(row) => Ok(Item {
-                id: row.get(0),
-                cnt: row.get(1),
-                adj: row.get(10),
-                created_at: row.get(2),
+                id: row.id,
+                cnt: row.cnt,
+                adj: row.adj.map_or(0, |a| a),
+                created_at: row.created_at,
                 product: ItemProduct {
-                    id: row.get(3),
-                    name: row.get(4),
+                    id: row.product_id,
+                    name: row.product_name,
                     measure_unit: Select {
-                        id: row.get(5),
-                        name: row.get(6),
+                        id: row.measure_unit_id,
+                        name: row.measure_unit_name,
                     },
                 },
                 user: USelect {
-                    id: row.get(7),
-                    fio: row.get(8),
-                    email: row.get(9),
+                    id: row.user_id,
+                    fio: row.user_fio,
+                    email: row.user_email,
                 },
             }),
             None => Err(AppError(
@@ -315,9 +364,9 @@ pub async fn add_adj_produced_goods(
     // Бизнес логика создания продукта
 
     let row: (i64,) = sqlx::query_as(
-        "insert
-            into produced_good_adjustments (user_id, produced_good_id, cnt) values
-            ($1, $2, $3) returning id",
+        "INSERT
+            INTO produced_good_adjustments (user_id, produced_good_id, cnt) VALUES
+            ($1, $2, $3) RETURNING id",
     )
     .bind(current_user.id)
     .bind(id)

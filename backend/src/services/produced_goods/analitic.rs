@@ -66,6 +66,7 @@ pub async fn get_analitics(
             AND CASE
                 WHEN $3::text IS NOT NULL THEN u.id = ANY((string_to_array($3::text, ','))::bigint[])
                 WHEN $4::VARCHAR IS NOT NULL THEN to_tsvector(p.name) @@ to_tsquery($4::VARCHAR)
+                WHEN $5::bigint IS NOT NULL AND $6 = 'Director' THEN u.organization_id = $5
                 ELSE TRUE
               END
             GROUP BY
@@ -92,6 +93,8 @@ pub async fn get_analitics(
                 }
             }),
             q.product,
+            current_user.organization_id,
+            current_user.role.to_string(),
         )
         .map(|row| Item {
             id: row.id,
