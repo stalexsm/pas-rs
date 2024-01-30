@@ -85,7 +85,7 @@ pub async fn edit_product(
             Some(organization_id) => {
                 let _ = sqlx::query(
                     "UPDATE products
-SET name=$1, measure_unit_id=$2, organization_id=$3 updated_at=NOW()
+SET name=$1, measure_unit_id=$2, organization_id=$3, updated_at=NOW()
                     WHERE id = $4",
                 )
                 .bind(body.name)

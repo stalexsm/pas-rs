@@ -12,5 +12,6 @@ pub struct Product {
     pub name: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 
+    pub organization: Select,
     pub measure_unit: Select,
 }
