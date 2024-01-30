@@ -65,8 +65,8 @@ pub async fn get_analitics(
             WHERE pg.created_at::date between $1 AND $2
             AND CASE
                 WHEN $3::text IS NOT NULL THEN u.id = ANY((string_to_array($3::text, ','))::bigint[])
-                WHEN $4::VARCHAR IS NOT NULL THEN to_tsvector(p.name) @@ to_tsquery($4::VARCHAR)
-                WHEN $5::bigint IS NOT NULL AND $6 = 'Director' THEN u.organization_id = $5
+                WHEN $4::VARCHAR IS NOT NULL THEN p.name ILIKE '%'||$4||'%'
+                WHEN $5::bigint IS NOT NULL AND $6 = 'Director' THEN pg.organization_id = $5
                 ELSE TRUE
               END
             GROUP BY

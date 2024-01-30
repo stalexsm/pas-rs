@@ -8,7 +8,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::{check_is_admin, services::Items, AppError, CurrentUser};
+use crate::{check_is_admin, services::Items, AppError, CurrentUser, Role};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -185,7 +185,7 @@ pub async fn get_produced_goods(
 
     let mut current_date: Option<NaiveDate> = None;
     let mut current_user_id: Option<i64> = None;
-    if !check_is_admin(current_user.role) {
+    if !check_is_admin(current_user.role) && current_user.role != Role::Director {
         current_date = Some(chrono::Utc::now().date_naive());
         current_user_id = Some(current_user.id);
     }
