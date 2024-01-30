@@ -24,6 +24,7 @@ pub struct RequestData {
     fio: String,
     role: Role,
     blocked: Option<bool>,
+    organization_id: Option<i64>,
 }
 
 #[function_component(UserComponent)]
@@ -106,7 +107,7 @@ pub fn user() -> Html {
         let cloned_item = item.clone();
         let cloned_rendered = rendered.clone();
         let navigator = use_navigator();
-        Callback::from(move |(email, fio, role, blocked)| {
+        Callback::from(move |(email, fio, role, blocked, organization_id)| {
             let mut header_bearer = String::from("Bearer ");
             let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
             if let Some(t) = token.clone() {
@@ -123,6 +124,7 @@ pub fn user() -> Html {
                     fio,
                     role,
                     blocked,
+                    organization_id,
                 };
 
                 // Хак для Home

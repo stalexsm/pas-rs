@@ -1,7 +1,14 @@
-use crate::{Role, User};
+use crate::{check_is_admin, ResponseItems, Role, Select, User};
+use gloo::{
+    net::http,
+    storage::{LocalStorage, Storage},
+};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;
+
+// Список параметров для on_save
+type OnSaveParams = (String, String, Role, Option<bool>, Option<i64>);
 
 #[derive(Properties, PartialEq, Default)]
 pub struct Props {
@@ -10,7 +17,7 @@ pub struct Props {
     pub item: Option<User>,
 
     pub toggle_modal: Callback<MouseEvent>,
-    pub on_save: Callback<(String, String, Role, Option<bool>)>,
+    pub on_save: Callback<OnSaveParams>,
 }
 
 #[function_component(Modal)]
@@ -25,10 +32,24 @@ pub fn modal(
 ) -> Html {
     // Заполнение данными
 
+    let mut roles = vec![(Role::User, "Пользователь")];
+    if let Some(u) = current_user.clone() {
+        if check_is_admin(u.role) {
+            if u.role == Role::Developer {
+                roles.extend([(Role::Director, "Директор"), (Role::Admin, "Администратор")])
+            } else {
+                roles.extend([(Role::Director, "Директор")])
+            }
+        }
+    }
+
     let email = use_state_eq(|| "".to_string());
     let fio = use_state_eq(|| "".to_string());
-    let role = use_state_eq(Role::default);
+    let role = use_state_eq(|| Role::User);
     let blocked = use_state_eq(|| false);
+
+    let organization_id = use_state_eq(|| None);
+    let organizations: UseStateHandle<Vec<Select>> = use_state(Vec::new);
 
     {
         let cloned_item = item.clone();
@@ -36,68 +57,156 @@ pub fn modal(
         let cloned_fio = fio.clone();
         let cloned_role = role.clone();
         let cloned_blocked = blocked.clone();
-        use_effect_with(*is_visible, move |visible| {
-            if *visible {
-                if let Some(item) = cloned_item.clone() {
-                    cloned_email.set(item.email);
-                    cloned_fio.set(item.fio);
-                    cloned_role.set(item.role);
-                    cloned_blocked.set(item.blocked);
-                } else {
-                    cloned_email.set("".to_string());
-                    cloned_fio.set("".to_string());
-                    cloned_role.set(Role::User);
-                    cloned_blocked.set(false);
+        let cloned_organizations = organizations.clone();
+        let cloned_organization_id = organization_id.clone();
+        use_effect_with(
+            (
+                *is_visible,
+                current_user
+                    .as_ref()
+                    .map_or(false, |u| check_is_admin(u.role)),
+            ),
+            move |(visible, is_admin)| {
+                if *visible {
+                    // Если Admin то получим организации
+
+                    if *is_admin {
+                        wasm_bindgen_futures::spawn_local(async move {
+                            let mut header_bearer = String::from("Bearer ");
+                            let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+                            if let Some(t) = token.clone() {
+                                header_bearer.push_str(&t);
+                            }
+
+                            let response =
+                                http::Request::get("/api/organizations") // todo helpers
+                                    .header("Content-Type", "application/json")
+                                    .header("Authorization", &header_bearer)
+                                    .query([("page", "1"), ("per_page", "10000")])
+                                    .send()
+                                    .await
+                                    .unwrap()
+                                    .json::<ResponseItems<Select>>()
+                                    .await
+                                    .unwrap();
+
+                            cloned_organizations.set(response.items.clone());
+
+                            if let Some(item) = cloned_item.clone() {
+                                cloned_email.set(item.email);
+                                cloned_fio.set(item.fio);
+                                cloned_role.set(item.role);
+                                cloned_blocked.set(item.blocked);
+                                cloned_organization_id.set(item.organization.map(|o| o.id));
+                            } else {
+                                cloned_role.set(Role::User);
+                                cloned_email.set("".to_string());
+                                cloned_fio.set("".to_string());
+                                cloned_blocked.set(false);
+
+                                let o_id = response.items.last().map_or(0, |it| it.id);
+                                cloned_organization_id.set(Some(o_id));
+
+                                // Только, если не админ
+                                if *cloned_role != Role::Admin {
+                                    let o_id = response.items.last().map_or(0, |it| it.id);
+                                    cloned_organization_id.set(Some(o_id));
+                                } else {
+                                    cloned_organization_id.set(None);
+                                }
+                            }
+                        })
+                    } else if let Some(item) = cloned_item.clone() {
+                        cloned_email.set(item.email);
+                        cloned_fio.set(item.fio);
+                        cloned_role.set(item.role);
+                        cloned_blocked.set(item.blocked);
+                        cloned_organization_id.set(item.organization.map(|o| o.id));
+                    } else {
+                        cloned_email.set("".to_string());
+                        cloned_fio.set("".to_string());
+                        cloned_role.set(Role::default());
+                        cloned_blocked.set(false);
+                        cloned_organization_id.set(None);
+                    }
                 }
-            }
-        });
+            },
+        );
     }
 
-    let cloned_email = email.clone();
-    let onchange_email = Callback::from(move |event: Event| {
-        let value = event
-            .target()
-            .unwrap()
-            .unchecked_into::<HtmlSelectElement>()
-            .value();
+    let onchange_email = {
+        let cloned_email = email.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
 
-        cloned_email.set(value);
-    });
+            cloned_email.set(value);
+        })
+    };
 
-    let cloned_fio = fio.clone();
-    let onchange_fio = Callback::from(move |event: Event| {
-        let value = event
-            .target()
-            .unwrap()
-            .unchecked_into::<HtmlSelectElement>()
-            .value();
+    let onchange_fio = {
+        let cloned_fio = fio.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
 
-        cloned_fio.set(value);
-    });
+            cloned_fio.set(value);
+        })
+    };
 
-    let cloned_role = role.clone();
-    let onchange_role = Callback::from(move |event: Event| {
-        let value = event
-            .target()
-            .unwrap()
-            .unchecked_into::<HtmlSelectElement>()
-            .value();
+    let onchange_role = {
+        let cloned_role = role.clone();
+        let cloned_o = organization_id.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
 
-        cloned_role.set(Role::from(value));
-    });
+            let value = value.into();
+            cloned_role.set(value);
+            // Если создаем Admin, то сбросим организацию
+            if value == Role::Admin {
+                cloned_o.set(None);
+            }
+        })
+    };
 
-    let cloned_blocked = blocked.clone();
-    let onchange_blocked = Callback::from(move |event: Event| {
-        let value = event.target_unchecked_into::<HtmlInputElement>().checked();
+    let onchange_blocked = {
+        let cloned_blocked = blocked.clone();
+        Callback::from(move |event: Event| {
+            let value = event.target_unchecked_into::<HtmlInputElement>().checked();
 
-        cloned_blocked.set(value);
-    });
+            cloned_blocked.set(value);
+        })
+    };
+
+    let onchange_organization = {
+        let cloned_o = organization_id.clone();
+        Callback::from(move |event: Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .unchecked_into::<HtmlSelectElement>()
+                .value();
+
+            cloned_o.set(value.parse::<i64>().ok());
+        })
+    };
 
     let on_save = {
         let cloned_email = email.clone();
         let cloned_fio = fio.clone();
         let cloned_role = role.clone();
         let cloned_blocked = blocked.clone();
+        let cloned_organization_id = organization_id.clone();
         let cloned_on_save = on_save.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
@@ -107,6 +216,7 @@ pub fn modal(
                 (*cloned_fio).clone(),
                 *cloned_role,
                 Some(*cloned_blocked),
+                *cloned_organization_id,
             ));
         })
     };
@@ -160,14 +270,33 @@ pub fn modal(
                                     onchange={onchange_role}
                                     id="role"
                                     class="mb-5 mt-2 text-gray-600 focus:outline-none focus:border focus:border-indigo-700 font-normal w-full h-10 flex items-center pl-3 text-sm border-gray-300 rounded border"
-                                    placeholder="Выберите Ед. измерения">
-                                    {[(Role::Admin, "Администратор"), (Role::User, "Пользователь")].iter().map(|(role, name)| {
+                                    placeholder="Выберите роль">
+                                    {
+                                        roles.iter().map(|(role_enum, name)| {
                                             html! {
-                                                <option selected={item.as_ref().map_or_else(|| false, |it| &it.role == role)} value={role.to_string()}>{name}</option>
+                                                <option selected={item.as_ref().map_or(false, |it| &it.role == role_enum) || &(*role).clone() == role_enum} value={role_enum.to_string()}>{name}</option>
                                             }
                                         }).collect::<Html>()
                                     }
                                 </select>
+
+                                if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) && Role::Admin != *role {
+                                    <label for="organization" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Организация"}</label>
+                                    <select
+                                        id="organization"
+                                        onchange={onchange_organization}
+                                        class="mb-5 mt-2 text-gray-600 focus:outline-none focus:border focus:border-indigo-700 font-normal w-full h-10 flex items-center pl-3 text-sm border-gray-300 rounded border"
+                                        placeholder="Выберите организацию">
+                                        {
+                                            organizations.iter().map(|o| {
+                                                html! {
+                                                    <option selected={item.as_ref().map_or(false, |it| it.organization.as_ref().map_or(false, |i| i.id == o.id))} value={o.id.to_string()}>{o.name.clone()}</option>
+                                                }
+                                            }).collect::<Html>()
+                                        }
+                                    </select>
+                                }
+
                                 if item.is_some(){
                                     <div class="mb-5 flex items-center">
                                     <label class="relative inline-flex cursor-pointer items-center">
