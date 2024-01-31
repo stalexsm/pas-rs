@@ -256,7 +256,7 @@ pub fn organization() -> Html {
         if items.cnt > 0 {
             <Paginate
                 cnt={items.cnt}
-                path={Route::MeasureUnit}
+                path={Route::Organization}
                 page={page}
                 per_page={PER_PAGE}
             />
