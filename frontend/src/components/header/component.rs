@@ -7,7 +7,7 @@ use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 use yew_router::prelude::*;
 
-use crate::{check_is_admin, AppContext, ResponseMsg, Route, User};
+use crate::{check_is_admin, components::use_outside_click, AppContext, ResponseMsg, Route, User};
 use crate::{components::header::modal::Modal, Role};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -54,14 +54,19 @@ pub fn header() -> Html {
         current_path = local.path().to_string();
     }
 
+    let node_ref = use_node_ref();
     let onclick = {
         let current_visible = *modal_visible;
         let cloned_modal_visible = modal_visible.clone();
-        Callback::from(move |e: MouseEvent| {
+        let f = Callback::from(move |e: MouseEvent| {
             e.prevent_default();
 
             cloned_modal_visible.set(!current_visible);
-        })
+        });
+
+        use_outside_click(node_ref.clone(), f.clone(), current_visible);
+
+        f
     };
 
     let onclick_mobile_menu = {
@@ -216,7 +221,7 @@ pub fn header() -> Html {
                     //     <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     //     </svg>
                     // </button>
-                        <div class="relative ml-3">
+                        <div ref={node_ref} class="relative ml-3">
                             <button
                                 {onclick}
                                 type="button"
