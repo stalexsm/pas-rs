@@ -320,7 +320,7 @@ pub fn home() -> Html {
                 <tbody class="divide-y divide-gray-100 border-t border-gray-100">
                     <ProducedGoodList
                         items={items.deref().items.clone()}
-                        current_user={current_user}
+                        current_user={current_user.clone()}
                         {on_edit}
                         {on_add_adj}
                         on_delete={on_delete_modal}
@@ -346,6 +346,7 @@ pub fn home() -> Html {
         />
 
         <Modal
+            current_user={current_user}
             is_visible={*is_visible}
             is_adj={*is_adj}
             item={(*item).clone()}

@@ -1,5 +1,5 @@
 use super::ProducedGood;
-use crate::{components::rbs::product::Product, ResponseItems};
+use crate::{check_is_admin, components::rbs::product::Product, ResponseItems, User};
 use gloo::{
     net::http,
     storage::{LocalStorage, Storage},
@@ -10,6 +10,7 @@ use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Default)]
 pub struct Props {
+    pub current_user: Option<User>,
     pub is_visible: bool,
     pub is_adj: bool,
     pub item: Option<ProducedGood>,
@@ -20,7 +21,17 @@ pub struct Props {
 }
 
 #[function_component(Modal)]
-pub fn modal(props: &Props) -> Html {
+pub fn modal(
+    Props {
+        current_user,
+        is_visible,
+        is_adj,
+        item,
+        toggle_modal,
+        on_save,
+        on_save_adj,
+    }: &Props,
+) -> Html {
     // Заполнение данными
 
     let product_id = use_state_eq(|| 0);
@@ -31,10 +42,10 @@ pub fn modal(props: &Props) -> Html {
 
     {
         let cloned_products = products.clone();
-        let item = props.item.clone();
+        let cloned_item = item.clone();
         let cloned_product_id = product_id.clone();
         let cloned_cnt = cnt.clone();
-        use_effect_with(props.is_visible, move |visible| {
+        use_effect_with(*is_visible, move |visible| {
             if *visible {
                 wasm_bindgen_futures::spawn_local(async move {
                     let mut header_bearer = String::from("Bearer ");
@@ -57,7 +68,7 @@ pub fn modal(props: &Props) -> Html {
 
                     cloned_products.set(response.items.clone());
 
-                    if let Some(item) = item.clone() {
+                    if let Some(item) = cloned_item.clone() {
                         cloned_product_id.set(item.product.id);
                         cloned_cnt.set(item.cnt);
                     } else {
@@ -106,9 +117,9 @@ pub fn modal(props: &Props) -> Html {
         let cloned_product_id = product_id.clone();
         let cloned_cnt = cnt.clone();
         let cloned_adj = adj.clone();
-        let cloned_on_save = props.on_save.clone();
-        let cloned_on_save_adj = props.on_save_adj.clone();
-        let cloned_is_adj = props.is_adj;
+        let cloned_on_save = on_save.clone();
+        let cloned_on_save_adj = on_save_adj.clone();
+        let cloned_is_adj = *is_adj;
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
 
@@ -123,7 +134,7 @@ pub fn modal(props: &Props) -> Html {
     html! {
         <div>
             <div
-                class={format!("py-12 bg-gray-700 transition duration-150 ease-in-out z-10 absolute top-0 right-0 bottom-0 left-0 {}", if props.is_visible {""} else {"hidden"})}
+                class={format!("py-12 bg-gray-700 transition duration-150 ease-in-out z-10 absolute top-0 right-0 bottom-0 left-0 {}", if *is_visible {""} else {"hidden"})}
                     id="modal"
                 >
                     <div
@@ -143,7 +154,7 @@ pub fn modal(props: &Props) -> Html {
                             >
                                 <label for="product" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Продукт"}</label>
                                 <select
-                                    disabled={props.is_adj}
+                                    disabled={*is_adj}
                                     onchange={onchange_product}
                                     id="product"
                                     class="mb-5 mt-2 text-gray-600 focus:outline-none focus:border focus:border-indigo-700 font-normal w-full h-10 flex items-center pl-3 text-sm border-gray-300 rounded border"
@@ -151,8 +162,16 @@ pub fn modal(props: &Props) -> Html {
                                     {
                                         (*products).iter().map(|item| {
                                             html! {
-                                                // <option selected={props.item.as_ref().map_or(false, |it| it.product.id == item.id)} value={item.id.to_string()}>{format!("{} ({})", &item.name, &item.measure_unit.name.clone())}</option>
-                                                <option selected={item.id == *product_id} value={item.id.to_string()}>{format!("{} ({})", &item.name, &item.measure_unit.name.clone())}</option>
+                                                <option
+                                                    selected={item.id == *product_id}
+                                                    value={item.id.to_string()}
+                                                >
+                                                if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                                                    {format!("{} ({}) [{}]", &item.name, &item.measure_unit.name.clone(), &item.organization.name.clone())}
+                                                } else {
+                                                    {format!("{} ({})", &item.name, &item.measure_unit.name.clone())}
+                                                }
+                                                </option>
                                             }
                                         }).collect::<Html>()
                                     }
@@ -161,7 +180,7 @@ pub fn modal(props: &Props) -> Html {
                                     {"Кол-во"}
                                 </label>
                                 <input
-                                    disabled={props.is_adj}
+                                    disabled={*is_adj}
                                     onchange={onchange_cnt}
                                     required={true}
                                     type="number"
@@ -178,7 +197,7 @@ pub fn modal(props: &Props) -> Html {
                                         }
                                     }
                                 />
-                                if let Some(it) = props.item.clone() {
+                                if let Some(it) = item.clone() {
                                     <p
                                         class="flex items-center gap-1 mb-5 font-sans text-sm antialiased font-normal leading-normal text-gray-700"
                                     >
@@ -199,11 +218,11 @@ pub fn modal(props: &Props) -> Html {
                                     </p>
                                 }
 
-                                if props.is_adj {
+                                if *is_adj {
                                     <label for="adj" class="text-gray-800 text-sm font-bold leading-tight tracking-normal">{"Корректировка"}</label>
                                     <input
                                         onchange={onchange_adj}
-                                        min={props.item.as_ref().map(|it| (-(it.cnt + it.adj)).to_string())}
+                                        min={item.as_ref().map(|it| (-(it.cnt + it.adj)).to_string())}
                                         required={true}
                                         type="number"
                                         id="adj"
@@ -213,7 +232,7 @@ pub fn modal(props: &Props) -> Html {
                                 }
                                 <div class="flex items-center justify-center w-full">
                                     <button
-                                        onclick={props.toggle_modal.clone()}
+                                        onclick={toggle_modal.clone()}
                                         class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 ml-3 bg-gray-100 transition duration-150 text-gray-600 ease-in-out hover:border-gray-400 hover:bg-gray-300 border rounded px-8 py-2 text-sm mr-5" >
                                         {"Отменить"}
                                     </button>
@@ -224,7 +243,7 @@ pub fn modal(props: &Props) -> Html {
                                     </button>
                                 </div>
                                 <button
-                                    onclick={props.toggle_modal.clone()}
+                                    onclick={toggle_modal.clone()}
                                     class="cursor-pointer absolute top-0 right-0 mt-4 mr-5 text-gray-400 hover:text-gray-600 transition duration-150 ease-in-out rounded focus:ring-2 focus:outline-none focus:ring-gray-600"
                                     aria-label="close modal"
                                     role="button">
