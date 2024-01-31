@@ -26,23 +26,53 @@ pub fn paginate(props: &Props) -> Html {
             <div class="flex flex-1 justify-between sm:hidden">
                 <Link<Route, Q>
                     to={props.path.clone()}
-                    classes="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    classes={classes!(
+                        "relative",
+                        "inline-flex",
+                        "items-center",
+                        "rounded-md",
+                        "border",
+                        "border-gray-300",
+                        "bg-white",
+                        "px-4",
+                        "py-2",
+                        "text-sm",
+                        "font-medium",
+                        "text-gray-700",
+                        "hover:bg-gray-50",
+                        if props.page == 1 {"cursor-default pointer-events-none opacity-30"} else {""}
+                    )}
                     query={Some(Q {
                         page: if (props.page - 1) >= 1 {props.page - 1} else {1},
                         per_page: props.per_page,
                     })}
-                    disabled={props.page == 1}
                 >
                     {"Предыдущая"}
                 </Link<Route, Q>>
                 <Link<Route, Q>
                     to={props.path.clone()}
-                    classes="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    classes={classes!(
+                            "relative",
+                            "ml-3",
+                            "inline-flex",
+                            "items-center",
+                            "rounded-md",
+                            "border",
+                            "border-gray-300",
+                            "bg-white",
+                            "px-4",
+                            "py-2",
+                            "text-sm",
+                            "font-medium",
+                            "text-gray-700",
+                            "hover:bg-gray-50",
+                            if props.page >= props.cnt {"cursor-default pointer-events-none opacity-30"} else {""}
+
+                        )}
                     query={Some(Q {
                         page: if (props.page + 1) <= props.cnt {props.page + 1} else {props.page},
                         per_page: props.per_page,
                     })}
-                    disabled={props.page >= props.cnt}
                 >
                     {"Следующая"}
                 </Link<Route, Q>>
@@ -53,12 +83,28 @@ pub fn paginate(props: &Props) -> Html {
                 <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                     <Link<Route, Q>
                         to={props.path.clone()}
-                        classes="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                        classes={
+                            classes!(
+                                "relative",
+                                "inline-flex",
+                                "items-center",
+                                "rounded-l-md",
+                                "px-2",
+                                "py-2",
+                                "text-gray-400",
+                                "ring-1",
+                                "ring-inset",
+                                "ring-gray-300",
+                                "hover:bg-gray-50",
+                                "focus:z-20",
+                                "focus:outline-offset-0",
+                                if props.page == 1 {"cursor-default pointer-events-none opacity-30"} else {""}
+                            )
+                        }
                         query={Some(Q {
                             page: if (props.page - 1) >= 1 {props.page - 1} else {1},
                             per_page: props.per_page,
                         })}
-                        disabled={props.page == 1}
                     >
                         <span class="sr-only">{"Предыдущая"}</span>
                         <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -72,7 +118,13 @@ pub fn paginate(props: &Props) -> Html {
                 {for (1..=props.cnt).map(|i| html! {
                     <Link<Route, Q>
                         to={props.path.clone()}
-                        classes={if props.page == i {"relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"} else {"relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"}}
+                        classes={
+                            if props.page == i {
+                            "cursor-default pointer-events-none relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                            } else {
+                                "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                            }
+                        }
                         query={Some(Q {
                             page: i,
                             per_page: props.per_page,
@@ -85,12 +137,26 @@ pub fn paginate(props: &Props) -> Html {
 
                 <Link<Route, Q>
                     to={props.path.clone()}
-                    classes={"relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"}
+                    classes={classes!(
+                        "relative",
+                        "inline-flex",
+                        "items-center",
+                        "rounded-r-md",
+                        "px-2",
+                        "py-2",
+                        "text-gray-400",
+                        "ring-1",
+                        "ring-inset",
+                        "ring-gray-300",
+                        "hover:bg-gray-50",
+                        "focus:z-20",
+                        "focus:outline-offset-0",
+                        if props.page >= props.cnt {"cursor-default pointer-events-none opacity-30"} else {""}
+                    )}
                     query={Some(Q {
                         page: if (props.page + 1) <= props.cnt {props.page + 1} else {props.page},
                         per_page: props.per_page,
                     })}
-                    disabled={props.page >= props.cnt}
                 >
                     {
                         html! {
