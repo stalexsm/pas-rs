@@ -8,7 +8,11 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::{check_is_admin, services::Items, AppError, CurrentUser, Role};
+use crate::{
+    check_is_admin,
+    services::{Items, Select},
+    AppError, CurrentUser, Role,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RequestBody {
@@ -145,12 +149,6 @@ fn page() -> i64 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Select {
-    pub id: i64,
-    pub name: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ItemProduct {
     pub id: i64,
     pub name: String,
@@ -174,6 +172,7 @@ pub struct Item {
 
     product: ItemProduct,
     user: USelect,
+    organization: Select,
 }
 
 pub async fn get_produced_goods(
@@ -202,12 +201,17 @@ pub async fn get_produced_goods(
     u.id AS user_id,
     u.fio AS user_fio,
     u.email AS user_email,
-    SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj
+    SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj,
+    JSONB_BUILD_OBJECT(
+        'id', o.id,
+        'name', o.name
+    ) AS organization
 FROM produced_goods AS pg
 INNER JOIN users AS u on u.id = pg.user_id
 INNER JOIN products AS p  on p.id = pg.product_id
 INNER JOIN measure_units AS mu on mu.id = p.measure_unit_id
 LEFT JOIN produced_good_adjustments AS pga on pga.produced_good_id = pg.id
+LEFT JOIN organizations AS o ON o.id = pg.organization_id
 WHERE
     CASE
         WHEN $1::bigint IS NOT NULL THEN
@@ -225,9 +229,10 @@ GROUP BY pg.id,
   mu.name,
   u.id,
   u.fio,
-  u.email
-order by pg.id desc
-offset $5 limit $6;",
+  u.email,
+  organization
+ORDER BY pg.id DESC
+OFFSET $5 LIMIT $6;",
         current_user_id,
         current_date,
         current_user.organization_id,
@@ -248,6 +253,7 @@ offset $5 limit $6;",
                 name: row.measure_unit_name,
             },
         },
+        organization: row.organization.into(),
         user: USelect {
             id: row.user_id,
             fio: row.user_fio,
@@ -299,12 +305,17 @@ pub async fn detail_produced_good(
         u.id AS user_id,
         u.fio AS user_fio,
         u.email AS user_email,
-        SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj
+        SUM(COALESCE(pga.cnt::INTEGER, 0)) AS adj,
+        JSONB_BUILD_OBJECT(
+            'id', o.id,
+            'name', o.name
+        ) AS organization
     FROM produced_goods AS pg
     INNER JOIN users AS u on u.id = pg.user_id
     INNER JOIN products AS p  on p.id = pg.product_id
     INNER JOIN measure_units AS mu on mu.id = p.measure_unit_id
     LEFT JOIN produced_good_adjustments AS pga on pga.produced_good_id = pg.id
+    LEFT JOIN organizations AS o ON o.id = pg.organization_id
     WHERE p.id = $1
     GROUP BY pg.id,
       pg.cnt,
@@ -315,7 +326,8 @@ pub async fn detail_produced_good(
       mu.name,
       u.id,
       u.fio,
-      u.email;",
+      u.email,
+      organization;",
             id
         )
         .fetch_optional(&pool)
@@ -336,6 +348,7 @@ pub async fn detail_produced_good(
                         name: row.measure_unit_name,
                     },
                 },
+                organization: row.organization.into(),
                 user: USelect {
                     id: row.user_id,
                     fio: row.user_fio,

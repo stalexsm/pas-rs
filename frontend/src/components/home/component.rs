@@ -9,6 +9,7 @@ use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
+    check_is_admin,
     components::{
         elements::{
             modal::ModalDelete,
@@ -311,6 +312,9 @@ pub fn home() -> Html {
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Продукт"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Пользователь"}</th>
+                        if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                            <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Организация"}</th>
+                        }
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Корректировки"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Кол-во"}</th>
                         <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>
