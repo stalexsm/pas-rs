@@ -20,7 +20,13 @@ use backend::{
             measure::{create_measure, delete_measure, detail_measure, edit_measure, get_measures},
             product::{create_product, delete_product, detail_product, edit_product, get_products},
         },
-        users::user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
+        users::{
+            organization::{
+                create_organization, delete_organization, detail_organization, edit_organization,
+                get_organizations,
+            },
+            user::{create_user, current_user, detail_user, edit_passwd, edit_user, get_users},
+        },
     },
     CurrentUser,
 };
@@ -56,6 +62,16 @@ async fn main() {
     let api = Router::new()
         // Check Auth
         .route("/logout", post(logout))
+        .route(
+            "/organizations",
+            get(get_organizations).post(create_organization),
+        )
+        .route(
+            "/organizations/:id",
+            get(detail_organization)
+                .patch(edit_organization)
+                .delete(delete_organization),
+        )
         .route("/current", get(current_user))
         .route("/users", get(get_users).post(create_user))
         .route("/users/:id", get(detail_user).patch(edit_user))
@@ -152,16 +168,17 @@ async fn authorize_current_user(
     if let Ok(auth_token) = Uuid::parse_str(auth_token) {
         if let Ok(user) = sqlx::query_as!(
             CurrentUser,
-            "select
-            users.id,
-            users.role,
-            users.email,
-            users.fio,
-            users.blocked,
-            sessions.id as token
-        from users
-        inner join sessions on sessions.user_id = users.id
-        where sessions.id = $1",
+            "SELECT
+            u.id,
+            u.organization_id,
+            u.role,
+            u.email,
+            u.fio,
+            u.blocked,
+            s.id as token
+        FROM users AS u
+        INNER JOIN sessions AS s ON s.user_id = u.id
+        WHERE s.id = $1",
             auth_token
         )
         // .bind(auth_token)

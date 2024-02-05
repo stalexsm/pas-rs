@@ -1,5 +1,5 @@
 use super::MeasureUnit;
-use crate::User;
+use crate::{check_is_admin, User};
 use chrono::Local;
 use yew::prelude::*;
 
@@ -14,7 +14,7 @@ pub struct Props {
 #[function_component(MeasureUnitList)]
 pub fn measure_unit_list(
     Props {
-        current_user: _,
+        current_user,
         items,
         on_edit,
         on_delete,
@@ -52,6 +52,9 @@ pub fn measure_unit_list(
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">{item.id}</td>
                     <td class="px-6 py-4">{item.name.clone()}</td>
+                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                        <td class="px-6 py-4">{item.organization.name.clone()}</td>
+                    }
                     <td class="px-6 py-4">{item.created_at.with_timezone(&Local).format("%d.%m.%Y %H:%M").to_string()}</td>
                     <td class="px-6 py-4">
                         <div class="flex justify-end gap-4">

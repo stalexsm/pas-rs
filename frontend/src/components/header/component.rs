@@ -7,8 +7,8 @@ use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 use yew_router::prelude::*;
 
-use crate::components::header::modal::Modal;
-use crate::{check_is_admin, AppContext, ResponseMsg, Route, User};
+use crate::{check_is_admin, components::use_outside_click, AppContext, ResponseMsg, Route, User};
+use crate::{components::header::modal::Modal, Role};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
@@ -29,11 +29,21 @@ pub fn header() -> Html {
 
     let mut menus: Vec<(Route, String)> = vec![(Route::Home, String::from("Производство"))];
     if let Some(u) = current_user.clone() {
+        if u.role == Role::Director {
+            menus.extend(vec![
+                (Route::Product, String::from("Товары")),
+                (Route::MeasureUnit, String::from("Единицы измерения")),
+                (Route::User, String::from("Пользователи")),
+                (Route::Analitic, String::from("Аналитика")),
+            ])
+        }
+
         if check_is_admin(u.role) {
             menus.extend(vec![
                 (Route::Product, String::from("Товары")),
                 (Route::MeasureUnit, String::from("Единицы измерения")),
                 (Route::User, String::from("Пользователи")),
+                (Route::Organization, String::from("Организации")),
                 (Route::Analitic, String::from("Аналитика")),
             ])
         }
@@ -44,14 +54,19 @@ pub fn header() -> Html {
         current_path = local.path().to_string();
     }
 
+    let node_ref = use_node_ref();
     let onclick = {
         let current_visible = *modal_visible;
         let cloned_modal_visible = modal_visible.clone();
-        Callback::from(move |e: MouseEvent| {
+        let f = Callback::from(move |e: MouseEvent| {
             e.prevent_default();
 
             cloned_modal_visible.set(!current_visible);
-        })
+        });
+
+        use_outside_click(node_ref.clone(), f.clone(), current_visible);
+
+        f
     };
 
     let onclick_mobile_menu = {
@@ -177,7 +192,9 @@ pub fn header() -> Html {
                     </div>
                     <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                         <div style="min-width: 40px;" class="flex flex-shrink-0 items-center">
-                            <img class="h-8 w-auto" src="./assets/img/logo.png" alt="PAS"/>
+                            <Link<Route> to={Route::Home}>
+                                <img class="h-8 w-auto" src="./assets/img/logo.png" alt="PAS"/>
+                            </Link<Route>>
                         </div>
                         <div class="hidden sm:ml-6 sm:block">
                             <div class="flex space-x-4">
@@ -204,14 +221,14 @@ pub fn header() -> Html {
                     //     <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     //     </svg>
                     // </button>
-                        <div class="relative ml-3">
+                        <div ref={node_ref} class="relative ml-3">
                             <button
                                 {onclick}
                                 type="button"
                                 class="text-gray-300 relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                                 id="user-menu-button"
                             >
-                                {current_user.as_ref().map(|u| u.fio.as_ref().map_or_else(|| u.email.clone(), |fio| fio.clone())).unwrap_or("N/A".to_string())}
+                                {current_user.as_ref().map(|u| u.fio.clone())}
                             </button>
                             <div class={format!("absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none {}", if !*modal_visible {"hidden"} else {""} )}
                                 role="menu"

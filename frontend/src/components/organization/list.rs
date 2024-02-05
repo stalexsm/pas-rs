@@ -1,20 +1,20 @@
-use super::Product;
-use crate::{check_is_admin, User};
+use super::Organization;
+use crate::User;
 use chrono::Local;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub items: Vec<Product>,
+    pub items: Vec<Organization>,
     pub current_user: Option<User>,
-    pub on_edit: Callback<Product>,
-    pub on_delete: Callback<Product>,
+    pub on_edit: Callback<Organization>,
+    pub on_delete: Callback<Organization>,
 }
 
-#[function_component(ProductList)]
-pub fn product_list(
+#[function_component(OrganizationList)]
+pub fn organization_list(
     Props {
-        current_user,
+        current_user: _,
         items,
         on_edit,
         on_delete,
@@ -52,10 +52,6 @@ pub fn product_list(
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">{item.id}</td>
                     <td class="px-6 py-4">{item.name.clone()}</td>
-                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
-                        <td class="px-6 py-4">{item.organization.name.clone()}</td>
-                    }
-                    <td class="px-6 py-4">{item.measure_unit.name.clone()}</td>
                     <td class="px-6 py-4">{item.created_at.with_timezone(&Local).format("%d.%m.%Y %H:%M").to_string()}</td>
                     <td class="px-6 py-4">
                         <div class="flex justify-end gap-4">

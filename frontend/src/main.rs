@@ -5,6 +5,7 @@ use frontend::{
         elements::loader::Loader,
         home::component::HomeComponent,
         not_found::NotFound,
+        organization::component::OrganizationComponent,
         rbs::{measure::component::MeasureUnitComponent, product::component::ProductComponent},
         user::component::UserComponent,
     },
@@ -89,6 +90,7 @@ fn switch(route: Route) -> Html {
             Route::MeasureUnit => html! { <MeasureUnitComponent />},
             Route::User => html! {<UserComponent /> },
             Route::Analitic => html! {<AnaliticComponent /> },
+            Route::Organization => html! {<OrganizationComponent /> },
             Route::NotFound => html! {<NotFound /> },
         },
         None => match route {

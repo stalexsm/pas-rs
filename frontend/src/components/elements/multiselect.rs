@@ -3,6 +3,8 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlAnchorElement;
 use yew::prelude::*;
 
+use crate::components::use_outside_click;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Item {
     pub id: i64,
@@ -28,12 +30,18 @@ pub fn multiselect(
 ) -> Html {
     // Обработка компонента Multi Select
     let show_opts = use_state(|| false);
+    let node_ref = use_node_ref();
+
     let onclick = {
         let cloned_show_opts = show_opts.clone();
-        Callback::from(move |e: MouseEvent| {
+        let f = Callback::from(move |e: MouseEvent| {
             e.prevent_default();
             cloned_show_opts.set(!*cloned_show_opts);
-        })
+        });
+        // Hook для закрытия при клики в не области
+        use_outside_click(node_ref.clone(), f.clone(), *show_opts);
+
+        f
     };
 
     let selected_opts: UseStateHandle<Vec<String>> = use_state(|| selected.clone());
@@ -46,7 +54,7 @@ pub fn multiselect(
     }
 
     html! {
-        <div class="flex flex-col sm:min-w-[190px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
+        <div ref={node_ref} class="flex flex-col sm:min-w-[190px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
             <div class="w-full"> // px-4
                 <div class="flex flex-col items-center relative">
                     <div class="w-full">

@@ -3,32 +3,31 @@ use gloo::{
     storage::{LocalStorage, Storage},
 };
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
-    check_is_admin,
     components::{
-        elements::paginate::{Paginate, Q},
+        elements::{
+            modal::ModalDelete,
+            paginate::{Paginate, Q},
+        },
         footer::Footer,
         header::component::HeaderComponent,
-        user::{list::UserList, modal::Modal},
+        organization::{list::OrganizationList, modal::Modal, Organization},
         PER_PAGE,
     },
-    AppContext, ResponseId, ResponseItems, ResponseMsg, Role, Route, User,
+    AppContext, ResponseId, ResponseItems, ResponseMsg, Route, User,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
-    email: String,
-    fio: String,
-    role: Role,
-    blocked: Option<bool>,
-    organization_id: Option<i64>,
+    name: String,
 }
 
-#[function_component(UserComponent)]
-pub fn user() -> Html {
+#[function_component(OrganizationComponent)]
+pub fn organization() -> Html {
     // Компонент домашней страницы
 
     let ctx = use_context::<AppContext>();
@@ -36,16 +35,16 @@ pub fn user() -> Html {
 
     let location = use_location().unwrap();
     let page = location.query::<Q>().map(|it| it.page).unwrap_or(1);
+
     let rendered = use_state_eq(|| false);
-
     let is_visible = use_state_eq(|| false);
+    let is_visible_del = use_state_eq(|| false);
 
-    let item: UseStateHandle<Option<User>> = use_state_eq(|| None);
-    let items: UseStateHandle<ResponseItems<User>> = use_state_eq(|| ResponseItems {
+    let item: UseStateHandle<Option<Organization>> = use_state_eq(|| None);
+    let items: UseStateHandle<ResponseItems<Organization>> = use_state(|| ResponseItems {
         cnt: 0,
         items: vec![],
     });
-
     {
         let items = items.clone();
         use_effect_with((page, rendered.clone()), move |(page, rendered)| {
@@ -59,7 +58,7 @@ pub fn user() -> Html {
                     header_bearer.push_str(&t);
                 }
 
-                let response = http::Request::get("/api/users")
+                let response = http::Request::get("/api/organizations")
                     .header("Content-Type", "application/json")
                     .header("Authorization", &header_bearer)
                     .query([
@@ -69,14 +68,13 @@ pub fn user() -> Html {
                     .send()
                     .await
                     .unwrap()
-                    .json::<ResponseItems<User>>()
+                    .json::<ResponseItems<Organization>>()
                     .await
                     .unwrap();
 
                 items.set(response);
                 cloned_rendered.set(false);
             });
-            || ()
         });
     }
 
@@ -91,10 +89,31 @@ pub fn user() -> Html {
         })
     };
 
+    let cloned_is_visible_del = is_visible_del.clone();
+    let toggle_modal_del = {
+        let cloned_item = item.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+
+            cloned_is_visible_del.set(!*cloned_is_visible_del);
+            cloned_item.set(None); //Сбросим state для Item редактирование
+        })
+    };
+
+    let on_delete_modal = {
+        let cloned_item = item.clone();
+        let cloned_is_visible_del = is_visible_del.clone();
+        Callback::from(move |item: Organization| {
+            cloned_item.set(Some(item));
+            // Toggle modal
+            cloned_is_visible_del.set(!*cloned_is_visible_del);
+        })
+    };
+
     let on_edit = {
         let cloned_item = item.clone();
         let cloned_is_visible = is_visible.clone();
-        Callback::from(move |item: User| {
+        Callback::from(move |item: Organization| {
             cloned_item.set(Some(item));
             // Toggle modal
             cloned_is_visible.set(!*cloned_is_visible);
@@ -107,7 +126,7 @@ pub fn user() -> Html {
         let cloned_item = item.clone();
         let cloned_rendered = rendered.clone();
         let navigator = use_navigator();
-        Callback::from(move |(email, fio, role, blocked, organization_id)| {
+        Callback::from(move |name| {
             let mut header_bearer = String::from("Bearer ");
             let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
             if let Some(t) = token.clone() {
@@ -119,16 +138,9 @@ pub fn user() -> Html {
             let cloned_rendered = cloned_rendered.clone();
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let req_data = RequestData {
-                    email,
-                    fio,
-                    role,
-                    blocked,
-                    organization_id,
-                };
-
+                let req_data = RequestData { name };
                 // Хак для Home
-                let path = "/api/users";
+                let path = "/api/organizations";
 
                 if let Some(item) = (*cloned_item).clone() {
                     let _: ResponseMsg = http::Request::patch(&format!("{}/{}", path, item.id))
@@ -160,7 +172,49 @@ pub fn user() -> Html {
                 cloned_rendered.set(true); // для перерисовки списка после действий.
 
                 if let Some(navigator) = navigator {
-                    navigator.push(&Route::User);
+                    navigator.push(&Route::Organization);
+                }
+            });
+        })
+    };
+
+    let on_delete = {
+        // todo
+        let cloned_is_visible_del = is_visible_del.clone();
+        let cloned_item = item.clone();
+        let cloned_rendered = rendered.clone();
+        let navigator = use_navigator();
+        Callback::from(move |_| {
+            let mut header_bearer = String::from("Bearer ");
+            let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
+            if let Some(t) = token.clone() {
+                header_bearer.push_str(&t);
+            }
+
+            let cloned_is_visible_del = cloned_is_visible_del.clone();
+            let cloned_item = cloned_item.clone();
+            let cloned_rendered = cloned_rendered.clone();
+            let navigator = navigator.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let path = "/api/organizations";
+
+                if let Some(item) = (*cloned_item).clone() {
+                    let _: ResponseMsg = http::Request::delete(&format!("{}/{}", path, item.id))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", &header_bearer)
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+                }
+
+                cloned_is_visible_del.set(!*cloned_is_visible_del);
+                cloned_rendered.set(true); // для перерисовки списка после действий.
+
+                if let Some(navigator) = navigator {
+                    navigator.push(&Route::Organization);
                 }
             });
         })
@@ -181,23 +235,18 @@ pub fn user() -> Html {
             <table class="w-full border-collapse bg-white text-left text-sm text-gray-500 table-auto">
                 <thead class="bg-gray-50 sticky top-0">
                     <tr>
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
-                        <th scope="col" class="w-0.5 px-6 py-4 font-medium text-gray-900 uppercase"></th>
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Фио"}</th>
-                        if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
-                             <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Организация"}</th>
-                        }
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Роль"}</th>
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Блокировка"}</th>
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>
-                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase"></th>
+                    <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
+                    <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Название"}</th>
+                    <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>
+                    <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 border-t border-gray-100">
-                    <UserList
-                        items={items.items.clone()}
-                        current_user={current_user.clone()}
+                    <OrganizationList
+                        items={items.deref().items.clone()}
+                    current_user={current_user.clone()}
                         {on_edit}
+                        on_delete={on_delete_modal}
                     />
                 </tbody>
             </table>
@@ -207,11 +256,17 @@ pub fn user() -> Html {
         if items.cnt > 0 {
             <Paginate
                 cnt={items.cnt}
-                path={Route::User}
+                path={Route::Organization}
                 page={page}
                 per_page={PER_PAGE}
             />
         }
+
+        <ModalDelete
+            is_visible={*is_visible_del}
+            toggle={toggle_modal_del}
+            {on_delete}
+        />
 
         <Modal
             current_user={current_user}
@@ -222,7 +277,6 @@ pub fn user() -> Html {
         />
 
         <Footer />
-
         </>
     }
 }

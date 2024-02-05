@@ -71,7 +71,10 @@ pub fn produced_good_lists(
                             <div class="text-gray-400">{item.product.measure_unit.name.clone()}</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4">{item.user.fio.clone().unwrap_or_else(|| "N/A".to_string() )}</td>
+                    <td class="px-6 py-4">{item.user.fio.clone()}</td>
+                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                        <td class="px-6 py-4">{item.organization.name.clone()}</td>
+                    }
                     <td class="px-6 py-4">
                     <span
                         class={format!("inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold {}", color_adj)}

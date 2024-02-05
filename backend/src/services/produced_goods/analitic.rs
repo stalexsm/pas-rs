@@ -5,9 +5,9 @@ use axum::{
 };
 
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgRow, PgPool, Row};
+use sqlx::PgPool;
 
-use crate::{check_is_admin, empty_string_as_none, AppError, CurrentUser};
+use crate::{check_access, AppError, CurrentUser};
 use rust_xlsxwriter::*;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -24,7 +24,6 @@ pub struct Q {
     pub date_one: chrono::NaiveDate,
     pub date_two: chrono::NaiveDate,
 
-    #[serde(default, deserialize_with = "empty_string_as_none")]
     pub product: Option<String>,
     pub user: Option<String>,
 }
@@ -36,47 +35,25 @@ pub async fn get_analitics(
 ) -> Result<Vec<Item>, AppError> {
     // Бизнес логика получения продуктв
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::NOT_FOUND,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
         ))
     } else {
-        let mut where_additation = String::new();
-        if let Some(product) = q.product {
-            where_additation.push_str(&format!(" and p.name ilike '%{}%'", product));
-        }
-
-        if let Some(user) = q.user {
-            if !user.is_empty() {
-                // Convert
-                let ids = user
-                    .split(';')
-                    .filter(|s| !s.is_empty())
-                    .filter_map(|s| s.parse::<i64>().ok())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>()
-                    .join(",");
-
-                where_additation.push_str(&format!(" and u.id in ({})", ids));
-                // todo пересмотреть
-            }
-        }
-
-        let rows = sqlx::query(&format!(
-            r#"select
+        let rows = sqlx::query!(
+            "SELECT
               p.id as id,
               p.name as name,
               mu.name as measure,
               u.fio as fio,
               SUM(pg.cnt + COALESCE(pa.adjustment_cnt::bigint, 0))::bigint AS cnt
-
-            from
-              products as p
-              join measure_units as mu on mu.id = p.measure_unit_id
-              join produced_goods as pg on p.id = pg.product_id
-              join users as u on u.id = pg.user_id
-              left join (
+            FROM
+              products AS p
+              JOIN measure_units as mu ON mu.id = p.measure_unit_id
+              JOIN produced_goods as pg ON p.id = pg.product_id
+              JOIN users as u ON u.id = pg.user_id
+              LEFT JOIN (
                 SELECT
                   produced_good_id,
                   SUM(cnt::bigint) AS adjustment_cnt
@@ -85,26 +62,46 @@ pub async fn get_analitics(
                 GROUP BY
                   produced_good_id
               ) pa ON pa.produced_good_id = pg.id
-            where
-              pg.created_at::date between $1 and $2
-              {}
-            group by
+            WHERE pg.created_at::date between $1 AND $2
+            AND CASE
+                WHEN $3::text IS NOT NULL THEN u.id = ANY((string_to_array($3::text, ','))::bigint[])
+                WHEN $4::VARCHAR IS NOT NULL THEN p.name ILIKE '%'||$4||'%'
+                WHEN $5::bigint IS NOT NULL AND $6 = 'Director' THEN pg.organization_id = $5
+                ELSE TRUE
+              END
+            GROUP BY
               p.id,
               u.fio,
               measure
-            order by
+            ORDER BY
               cnt desc,
-              p.id desc;"#,
-            where_additation
-        ))
-        .bind(q.date_one)
-        .bind(q.date_two)
-        .map(|row: PgRow| Item {
-            id: row.get(0),
-            name: row.get(1),
-            measure: row.get(2),
-            fio: row.get(3),
-            cnt: row.get(4),
+              p.id desc;",
+            q.date_one,
+            q.date_two,
+            q.user.map_or(None, |u| {
+                if u.is_empty() {
+                    None
+                } else {
+                    Some(
+                        u.split(';')
+                            .filter(|s| !s.is_empty())
+                            .filter_map(|s| s.parse::<i64>().ok())
+                            .map(|s| s.to_string())
+                            .collect::<Vec<String>>()
+                            .join(","),
+                    )
+                }
+            }),
+            q.product,
+            current_user.organization_id,
+            current_user.role.to_string(),
+        )
+        .map(|row| Item {
+            id: row.id,
+            name: row.name,
+            measure: row.measure,
+            fio: row.fio,
+            cnt: row.cnt.map_or(0, |cnt| cnt),
         })
         .fetch_all(&pool)
         .await?;

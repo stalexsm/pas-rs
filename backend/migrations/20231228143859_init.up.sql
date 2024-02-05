@@ -1,84 +1,102 @@
 -- Add up migration script here
 
-drop table if exists users cascade;
+DROP TABLE IF EXISTS organizations CASCADE;
 
-create table users (
-    id bigserial primary key,
-    role varchar(255) not null,
-    email varchar(1000) not null unique,
-    fio varchar(1000) null,
-    passwd varchar(1000) null,
-    blocked boolean not null default 'f',
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone null
+CREATE TABLE organizations (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(1000) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NULL
 );
 
-create index on users (role);
+DROP TABLE IF EXISTS users CASCADE;
 
-
-drop table if exists sessions cascade;
-
-create table sessions (
-    id uuid primary key,
-    user_id bigint not null references users(id) on delete cascade,
-    expires_at timestamp with time zone not null,
-    created_at timestamp with time zone not null default now()
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id BIGINT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+    role VARCHAR(255) NOT NULL,
+    email VARCHAR(1000) NOT NULL UNIQUE,
+    fio VARCHAR(1000) NOT NULL,
+    passwd VARCHAR(1000) NULL,
+    blocked BOOLEAN NOT NULL DEFAULT 'F',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NULL
 );
 
-create index on sessions (user_id);
+CREATE INDEX ON users (organization_id);
+CREATE INDEX ON users (role);
 
 
-drop table if exists measure_units cascade;
+DROP TABLE IF EXISTS sessions CASCADE;
 
-create table measure_units (
-    id bigserial primary key,
-    name varchar(255) not null,
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone null
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON sessions (user_id);
+
+
+DROP TABLE IF EXISTS measure_units CASCADE;
+
+CREATE TABLE measure_units (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id BIGINT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+CREATE INDEX ON measure_units (organization_id);
+
+
+DROP TABLE IF EXISTS products CASCADE;
+
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id BIGINT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+    measure_unit_id BIGINT NOT NULL REFERENCES measure_units (id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+CREATE INDEX ON products (organization_id);
+CREATE INDEX ON products (measure_unit_id);
+
+
+DROP TABLE IF EXISTS produced_goods CASCADE;
+
+CREATE TABLE produced_goods (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    organization_id BIGINT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    cnt bigint NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+CREATE INDEX ON produced_goods (user_id);
+CREATE INDEX ON produced_goods (organization_id);
+CREATE INDEX ON produced_goods (product_id);
+
+
+DROP TABLE IF EXISTS produced_good_adjustments CASCADE;
+
+CREATE TABLE produced_good_adjustments (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    produced_good_id BIGINT NOT NULL REFERENCES produced_goods(id) ON DELETE CASCADE,
+    cnt bigint NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 
-drop table if exists products cascade;
-
-create table products (
-    id bigserial primary key,
-    measure_unit_id bigint not null references measure_units(id) on delete cascade,
-    name varchar(255) not null,
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone null
-);
-
-create index on products (measure_unit_id);
+CREATE INDEX ON produced_good_adjustments (user_id);
+CREATE INDEX ON produced_good_adjustments (produced_good_id);
 
 
-drop table if exists produced_goods cascade;
-
-create table produced_goods (
-    id bigserial primary key,
-    user_id bigint not null references users(id) on delete cascade,
-    product_id bigint not null references products(id) on delete cascade,
-    cnt bigint not null,
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone null
-);
-
-create index on produced_goods (user_id);
-create index on produced_goods (product_id);
-
-
-drop table if exists produced_good_adjustments cascade;
-
-create table produced_good_adjustments (
-    id bigserial primary key,
-    user_id bigint not null references users(id) on delete cascade,
-    produced_good_id bigint not null references produced_goods(id) on delete cascade,
-    cnt bigint not null,
-    created_at timestamp with time zone not null default now()
-);
-
-
-create index on produced_good_adjustments (user_id);
-create index on produced_good_adjustments (produced_good_id);
-
-
-insert into users (role, email, fio, passwd) values ('Developer', 'stalex.info@yandex.ru', 'А.С (Разработчик)', '$2b$12$o1Mjf.Uhbjye1tb2gRR82.5NOA/flndnWdMfn.i5YZpGZvq4pdL4i');
+INSERT INTO users (role, email, fio, passwd) VALUES ('Developer', 'stalex.info@yandex.ru', 'А.С (Разработчик)', '$2b$12$o1Mjf.Uhbjye1tb2gRR82.5NOA/flndnWdMfn.i5YZpGZvq4pdL4i');

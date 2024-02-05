@@ -3,9 +3,8 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{fmt, str::FromStr};
 
 use uuid::Uuid;
 
@@ -67,31 +66,36 @@ impl From<String> for Role {
     }
 }
 
+impl ToString for Role {
+    fn to_string(&self) -> String {
+        match self {
+            Role::Developer => "Developer".to_string(),
+            Role::Admin => "Admin".to_string(),
+            Role::Director => "Director".to_string(),
+            Role::User => "User".to_string(),
+        }
+    }
+}
+
 pub fn check_is_admin(role: Role) -> bool {
     // Вспомогательная функция для проверки админских ролей
 
     matches!(role, Role::Developer | Role::Admin)
 }
 
+pub fn check_access(role: Role) -> bool {
+    // Вспомогательная функция для проверки доступа к функционалу
+
+    check_is_admin(role) || role == Role::Director
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CurrentUser {
     pub id: i64,
+    pub organization_id: Option<i64>,
     pub role: Role,
     pub email: String,
     pub fio: Option<String>,
     pub blocked: bool,
     pub token: Uuid,
-}
-
-fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: FromStr,
-    T::Err: fmt::Display,
-{
-    let opt = Option::<String>::deserialize(de)?;
-    match opt.as_deref() {
-        None | Some("") => Ok(None),
-        Some(s) => FromStr::from_str(s).map_err(de::Error::custom).map(Some),
-    }
 }

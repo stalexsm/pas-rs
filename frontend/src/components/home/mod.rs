@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::Select;
+use crate::Select;
 
 pub mod component;
 pub mod list;
@@ -9,7 +9,7 @@ pub mod modal;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct USelect {
     pub id: i64,
-    pub fio: Option<String>,
+    pub fio: String,
     pub email: String,
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -27,4 +27,5 @@ pub struct ProducedGood {
     pub adj: i64,
     pub user: USelect,
     pub product: ItemProduct,
+    pub organization: Select,
 }

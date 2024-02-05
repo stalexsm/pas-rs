@@ -8,6 +8,7 @@ use yew::prelude::*;
 use yew_router::hooks::{use_location, use_navigator};
 
 use crate::{
+    check_is_admin,
     components::{
         elements::{
             modal::ModalDelete,
@@ -24,6 +25,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RequestData {
+    organization_id: i64,
     measure_unit_id: i64,
     name: String,
 }
@@ -128,7 +130,7 @@ pub fn product() -> Html {
         let cloned_item = item.clone();
         let cloned_rendered = rendered.clone();
         let navigator = use_navigator();
-        Callback::from(move |(measure_unit_id, name)| {
+        Callback::from(move |(measure_unit_id, name, organization_id)| {
             let mut header_bearer = String::from("Bearer ");
             let token: Option<String> = LocalStorage::get("token").unwrap_or(None);
             if let Some(t) = token.clone() {
@@ -141,6 +143,7 @@ pub fn product() -> Html {
             let navigator = navigator.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let req_data = RequestData {
+                    organization_id,
                     measure_unit_id,
                     name,
                 };
@@ -242,6 +245,9 @@ pub fn product() -> Html {
                     <tr>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"#"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Название"}</th>
+                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                        <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Организация"}</th>
+                    }
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Ед. измерения"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase">{"Дата создания"}</th>
                     <th scope="col" class="px-6 py-4 font-medium text-gray-900 uppercase"></th>
@@ -250,7 +256,7 @@ pub fn product() -> Html {
                 <tbody class="divide-y divide-gray-100 border-t border-gray-100">
                     <ProductList
                         items={items.deref().items.clone()}
-                        current_user={current_user}
+                        current_user={current_user.clone()}
                         {on_edit}
                         on_delete={on_delete_modal}
                     />
@@ -275,6 +281,7 @@ pub fn product() -> Html {
         />
 
         <Modal
+            current_user={current_user}
             is_visible={*is_visible}
             item={(*item).clone()}
             {toggle_modal}
