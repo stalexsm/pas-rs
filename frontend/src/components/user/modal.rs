@@ -36,9 +36,12 @@ pub fn modal(
     if let Some(u) = current_user.clone() {
         if check_is_admin(u.role) {
             if u.role == Role::Developer {
-                roles.extend([(Role::Director, "Директор"), (Role::Admin, "Администратор")])
+                roles.extend([
+                    (Role::Director, "Руководитель"),
+                    (Role::Admin, "Администратор"),
+                ])
             } else {
-                roles.extend([(Role::Director, "Директор")])
+                roles.extend([(Role::Director, "Руководитель")])
             }
         }
     }
