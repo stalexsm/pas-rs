@@ -168,7 +168,7 @@ pub async fn get_measures(
     .await?;
 
     // Подсчет данных для пагинации
-    let cnt: i64 = sqlx::query_scalar("SELCT COUNT(id) FROM measure_units;")
+    let cnt: i64 = sqlx::query_scalar("SELECT COUNT(id) FROM measure_units;")
         .fetch_one(&pool)
         .await
         .unwrap_or(0);
