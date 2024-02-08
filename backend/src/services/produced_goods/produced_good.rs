@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
 use crate::{
-    check_is_admin,
+    check_access, check_is_admin,
     services::{Items, Select},
     AppError, CurrentUser, Role,
 };
@@ -68,7 +68,7 @@ pub async fn edit_produced_good(
 ) -> Result<i64, AppError> {
     // Бизнес логика редактирования продукта
 
-    if !check_is_admin(current_user.role) {
+    if !check_access(current_user.role) {
         Err(AppError(
             StatusCode::FORBIDDEN,
             anyhow::anyhow!("У вас нет доступа для данного действия!"),
