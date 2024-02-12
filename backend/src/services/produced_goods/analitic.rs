@@ -118,7 +118,6 @@ pub async fn generate_excel(
     let mut wookbook = Workbook::new();
 
     // formats
-    let bold_fmt = Format::new().set_bold().set_border(FormatBorder::Thin);
     let right_fmt = Format::new()
         .set_align(FormatAlign::Right)
         .set_border(FormatBorder::Thin);
@@ -182,22 +181,6 @@ pub async fn generate_excel(
 
         i += 1;
     });
-
-    // Итоги
-    let _ = worksheet.write_with_format(i, 4, Formula::new(format!("=SUM(E3:E{})", i)), &bold_fmt);
-
-    // Merge cells
-    let _ = worksheet.merge_range(
-        i,
-        0,
-        i,
-        2,
-        "Всего произведено товаров",
-        &Format::new()
-            .set_bold()
-            .set_align(FormatAlign::Center)
-            .set_border(FormatBorder::Thin),
-    );
 
     let buffer = wookbook.save_to_buffer()?;
 
