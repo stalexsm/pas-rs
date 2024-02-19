@@ -4,7 +4,6 @@ use axum::{
     Extension, Json,
 };
 
-use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -182,10 +181,8 @@ pub async fn get_produced_goods(
 ) -> Result<Items<Item>, anyhow::Error> {
     // Бизнес логика получения списка продуктв
 
-    let mut current_date: Option<NaiveDate> = None;
     let mut current_user_id: Option<i64> = None;
     if !check_is_admin(current_user.role) && current_user.role != Role::Director {
-        current_date = Some(chrono::Utc::now().date_naive());
         current_user_id = Some(current_user.id);
     }
 
@@ -215,9 +212,9 @@ LEFT JOIN organizations AS o ON o.id = pg.organization_id
 WHERE
     CASE
         WHEN $1::bigint IS NOT NULL THEN
-            pg.user_id = $1 AND pg.created_at::date = $2
-        WHEN $3::bigint IS NOT NULL AND $4 = 'Director' THEN
-            pg.organization_id = $3
+            pg.user_id = $1
+        WHEN $2::bigint IS NOT NULL AND $3 = 'Director' THEN
+            pg.organization_id = $2
         ELSE TRUE
     END
 GROUP BY pg.id,
@@ -232,9 +229,8 @@ GROUP BY pg.id,
   u.email,
   organization
 ORDER BY pg.id DESC
-OFFSET $5 LIMIT $6;",
+OFFSET $4 LIMIT $5;",
         current_user_id,
-        current_date,
         current_user.organization_id,
         current_user.role.to_string(),
         (q.page - 1) * q.per_page,
@@ -271,7 +267,6 @@ OFFSET $5 LIMIT $6;",
     END",
     )
     .bind(current_user_id)
-    .bind(current_date)
     .fetch_one(&pool)
     .await
     .unwrap_or(0);
