@@ -208,7 +208,14 @@ pub fn modal(
                                     {
                                         (*measure_units).iter().map(|item| {
                                             html! {
-                                                <option selected={item.id == *mu_id} value={item.id.to_string()}>{format!("{}", &item.name)}</option>
+                                                <option selected={item.id == *mu_id} value={item.id.to_string()}>
+                                                    if current_user.as_ref().map_or(false, |u| check_is_admin(u.role)) {
+                                                        {format!("{} [{}]", &item.name, &item.organization.name.clone())}
+                                                    } else {
+                                                        {format!("{}", &item.name)}
+                                                    }
+                                                </option>
+
                                             }
                                         }).collect::<Html>()
                                     }

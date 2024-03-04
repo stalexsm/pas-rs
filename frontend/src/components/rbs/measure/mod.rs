@@ -12,5 +12,5 @@ pub struct MeasureUnit {
     pub name: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 
-    organization: Select,
+    pub organization: Select,
 }
