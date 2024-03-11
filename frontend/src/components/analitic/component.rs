@@ -7,6 +7,7 @@ use crate::{
     },
     AppContext, ResponseItems, Route, User,
 };
+
 use gloo::{
     net::http,
     storage::{LocalStorage, Storage},
@@ -38,13 +39,18 @@ pub fn analitic() -> Html {
     let date_naive = chrono::Utc::now().date_naive();
     let location = use_location().unwrap();
     let date_one = use_state_eq(|| {
+        let default_dt = match chrono::Duration::try_days(7) {
+            Some(delta) => date_naive - delta,
+            None => date_naive,
+        };
+
         location
             .query::<Q>()
             .map(|it| {
                 chrono::NaiveDate::parse_from_str(it.date_one.to_string().as_str(), "%Y-%m-%d")
-                    .unwrap_or(date_naive - chrono::Duration::days(7))
+                    .unwrap_or(default_dt)
             })
-            .unwrap_or(date_naive - chrono::Duration::days(7))
+            .unwrap_or(default_dt)
     });
     let date_two = use_state_eq(|| {
         location

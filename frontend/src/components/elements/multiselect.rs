@@ -54,7 +54,7 @@ pub fn multiselect(
     }
 
     html! {
-        <div ref={node_ref} class="flex flex-col sm:min-w-[190px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
+        <div ref={node_ref} class="flex flex-col sm:min-w-[210px]"> // h-64 w-full md:w-1/2 flex flex-col items-center mx-auto
             <div class="w-full"> // px-4
                 <div class="flex flex-col items-center relative">
                     <div class="w-full">
@@ -178,8 +178,8 @@ pub fn multiselect(
                                                                 "mx-2",
                                                                 "leading-6",
                                                                 "w-full",
-                                                                "truncate",
                                                                 "text-gray-600",
+                                                                "text-wrap",
                                                             )
                                                         }
                                                     >

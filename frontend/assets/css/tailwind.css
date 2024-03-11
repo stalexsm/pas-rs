@@ -2439,8 +2439,8 @@ video {
     width: 100%;
   }
 
-  .sm\:min-w-\[190px\] {
-    min-width: 190px;
+  .sm\:min-w-\[210px\] {
+    min-width: 210px;
   }
 
   .sm\:max-w-lg {

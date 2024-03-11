@@ -1,6 +1,5 @@
 use axum::{extract::State, http::StatusCode, Extension, Json};
 use bcrypt;
-use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -30,12 +29,17 @@ pub async fn authorization(
             if bcrypt::verify(&body.passwd, &passwd)? {
                 let token = Uuid::new_v4();
 
+                let default_dt = match chrono::Duration::try_days(30) {
+                    Some(delta) => chrono::Utc::now() + delta,
+                    None => chrono::Utc::now(),
+                };
+
                 let _ = sqlx::query(
                     "insert into sessions (id, user_id, expires_at) values ($1, $2, $3);",
                 )
                 .bind(token)
                 .bind(row.0)
-                .bind(Utc::now() + Duration::days(30))
+                .bind(default_dt)
                 .execute(&pool)
                 .await?;
 
