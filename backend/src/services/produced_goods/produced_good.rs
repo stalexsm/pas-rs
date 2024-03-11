@@ -260,9 +260,9 @@ OFFSET $4 LIMIT $5;",
     .await?;
 
     let cnt: i64 = sqlx::query_scalar(
-        "SELECT COUNT(id) FROM produced_goods WHERE CASE
+        "SELECT COUNT(id) FROM produced_goods as pg WHERE CASE
         WHEN $1::bigint IS NOT NULL THEN
-            pg.user_id = $1 AND pg.created_at::date = $2
+            pg.user_id = $1
         ELSE TRUE
     END",
     )
