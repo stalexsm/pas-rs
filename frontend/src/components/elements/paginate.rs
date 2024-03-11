@@ -21,6 +21,9 @@ pub struct Q {
 pub fn paginate(props: &Props) -> Html {
     // Обработка Page
 
+    let start_page = (props.page - 2).max(1).min(props.cnt - 4);
+    let end_page = (start_page + 4).min(props.cnt);
+
     html! {
         <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
             <div class="flex flex-1 justify-between sm:hidden">
@@ -115,7 +118,7 @@ pub fn paginate(props: &Props) -> Html {
                             />
                         </svg>
                     </Link<Route, Q>>
-                {for (1..=props.cnt).map(|i| html! {
+                {for (start_page..=end_page).map(|i| html! {
                     <Link<Route, Q>
                         to={props.path.clone()}
                         classes={
