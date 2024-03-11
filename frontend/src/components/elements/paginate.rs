@@ -21,7 +21,9 @@ pub struct Q {
 pub fn paginate(props: &Props) -> Html {
     // Обработка Page
 
-    let start_page = (props.page - 2).max(1).min(props.cnt - 4);
+    let start_page = (props.page - 2)
+        .max(1)
+        .min(props.cnt.saturating_sub(4).max(1));
     let end_page = (start_page + 4).min(props.cnt);
 
     html! {
