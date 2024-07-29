@@ -18,13 +18,21 @@ pub async fn authorization(
 ) -> Result<Uuid, AppError> {
     // Бизнес логика для авторизации
 
-    let row: Option<(i64, Option<String>)> =
-        sqlx::query_as("select users.id, users.passwd from users where users.email = $1")
-            .bind(&body.email)
-            .fetch_optional(&pool)
-            .await?;
+    let row: Option<(i64, Option<String>, bool)> = sqlx::query_as(
+        "select users.id, users.passwd, users.blocked from users where users.email = $1",
+    )
+    .bind(&body.email)
+    .fetch_optional(&pool)
+    .await?;
 
     if let Some(row) = row {
+        if row.2 {
+            return Err(AppError(
+                StatusCode::FORBIDDEN,
+                anyhow::anyhow!("Доступ запрещен!"),
+            ));
+        }
+
         if let Some(passwd) = row.1 {
             if bcrypt::verify(&body.passwd, &passwd)? {
                 let token = Uuid::new_v4();
