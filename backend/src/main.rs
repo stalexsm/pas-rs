@@ -150,10 +150,14 @@ async fn authenticate(
     };
 
     if let Some(current_user) = authorize_current_user(State(pool), &auth_header).await {
-        // вставьте текущего пользователя в расширение запроса, чтобы обработчик мог
-        // извлечь его
-        req.extensions_mut().insert(current_user);
-        Ok(next.run(req).await)
+        // Проверка, что пользователь не заблокирован.
+        if current_user.blocked {
+            Err(StatusCode::FORBIDDEN)
+        } else {
+            // вставьте текущего пользователя в расширение запроса, чтобы обработчик мог извлечь его
+            req.extensions_mut().insert(current_user);
+            Ok(next.run(req).await)
+        }
     } else {
         Err(StatusCode::UNAUTHORIZED)
     }
